@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
+    <link rel="icon" href="dist/favicon.ico"/>
+    <title>FIRE计算器</title>
+    <link rel="stylesheet" href="dist/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="dist/css/c070423032508.css">
+    <link rel="stylesheet" type="text/css" href="dist/css/c220423282110.css">
+</head>
+<body>
+<h2 id="pageTitle"></h2>
+<div class="row">
+    <div class="col-md-4 form-group">
+        <label for="principal">本金:</label>
+        <div class="input-group">
+            <input type="number" id="principal" class="form-control form-control-lg" min="0" max="999999999"
+                   step="100000" value="2000000" oninput="limitInputLength(this, 15)"/>
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary btn-lg" type="button" onclick="decrementPrincipal()">-</button>
+                <button class="btn btn-outline-secondary btn-lg" type="button" onclick="incrementPrincipal()">+</button>
+            </div>
+        </div>
+        <span id="principalDisplay" class="text-muted"></span>
+    </div>
+    <div class="col-md-4 form-group">
+        <label for="annualInterestRate">年化利率%:</label>
+        <div class="input-group">
+            <input type="number" id="annualInterestRate" class="form-control form-control-lg" min="0" max="1000"
+                   step="0.1" value="2.000" oninput="limitInputLength(this, 6)"/>
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary btn-lg" type="button" onclick="resetInterestRate()">×</button>
+                <button class="btn btn-outline-secondary btn-lg" type="button" onclick="decrementInterestRate()">-
+                </button>
+                <button class="btn btn-outline-secondary btn-lg" type="button" onclick="incrementInterestRate()">+
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 form-group">
+        <label for="stableIncome">稳定年收入<span class="th-info">(退休金/收租/副业等)</span>:</label>
+        <div class="input-group">
+            <input type="number" id="stableIncome" class="form-control form-control-lg" min="0" max="999999999"
+                   step="10000" value="0"
+                   oninput="limitInputLength(this, 10)"/>
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary btn-lg" type="button" onclick="resetStableIncome()">×</button>
+                <button class="btn btn-outline-secondary btn-lg" type="button" onclick="decrementStableIncome()">-
+                </button>
+                <button class="btn btn-outline-secondary btn-lg" type="button" onclick="incrementStableIncome()">+
+                </button>
+            </div>
+        </div>
+        <span id="stableIncomeDisplay" class="text-muted"></span>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-4 form-group bg-liability">
+        <label for="annualExpenses">当前年消费:</label>
+        <div class="input-group">
+            <input type="number" id="annualExpenses" class="form-control form-control-lg" min="0" max="99999999"
+                   step="5000" value="45000" oninput="limitInputLength(this, 10)"/>
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary btn-lg" type="button" onclick="decrementAnnualExpenses()">-
+                </button>
+                <button class="btn btn-outline-secondary btn-lg" type="button" onclick="incrementAnnualExpenses()">+
+                </button>
+            </div>
+        </div>
+        <span id="monthlyExpensesDisplay" class="text-muted"></span>
+    </div>
+    <div class="col-md-4 form-group bg-liability">
+        <label for="inflationRate">通胀率%:</label>
+        <div class="input-group">
+            <input type="number" id="inflationRate" class="form-control form-control-lg" min="0" max="1000" step="0.1"
+                   value="2.229" oninput="limitInputLength(this, 6)"/>
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary btn-lg" type="button" onclick="resetInflationRate()">×</button>
+                <button class="btn btn-outline-secondary btn-lg" type="button" onclick="decrementInflationRate()">-
+                </button>
+                <button class="btn btn-outline-secondary btn-lg" type="button" onclick="incrementInflationRate()">+
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 form-group d-flex justify-content-center align-items-center">
+        <label><br></label>
+        <div class="input-group justify-content-center">
+            <button class="btn btn-black btn-lg" onclick="calculateInterest()">计算</button>
+        </div>
+    </div>
+</div>
+
+<div style="position: relative;">
+    <canvas id="lineChart" width="400" height="200"></canvas>
+    <div id="floatingText" class="floating-text"></div>
+</div>
+<table class="table table-hover mt-4">
+    <thead class="thead-dark">
+    <tr>
+        <th class="text-center align-top">
+            <div class="d-flex flex-column align-items-center justify-content-center">
+                <span class="mr-2">年数</span>
+                <div class="d-flex flex-column">
+                    <div class="input-group">
+                        <input type="number" id="startYear" class="form-control form-control-sm text-center"
+                               min="2001" max="2099" step="1" placeholder="开躺年" readonly>
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary btn-sm" type="button" onclick="resetStartYear()">
+                                ×
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" type="button"
+                                    onclick="decrementStartYear()">‹
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" type="button"
+                                    onclick="incrementStartYear()">›
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </th>
+        <th class="text-center align-top">年消费<br><span class="th-info expense-title"></span></th>
+        <th class="text-center align-top">年利息<br><span class="th-info income-title"></span></th>
+        <th class="text-center align-top">本金<br><span class="th-info">(上年本金-年消费+年利息+年收入)</span></th>
+    </tr>
+    </thead>
+    <tbody id="resultTable">
+    </tbody>
+</table>
+
+
+<div class="alert alert-info bg-fbfbfa border-0 rounded-0" role="alert">
+    <div class="d-flex align-items-center">
+        <div class="flex-grow-1">
+            <p class="mb-2">
+                中国近十年通胀率平均在 <strong>2.229%</strong> 左右，
+                <a href="https://www.baidu.com/s?wd=中国近十年通胀率" target="_blank" class="alert-link">了解更多...</a>
+            </p>
+            <p class="mb-0">
+                <span class="text-muted">来自</span>
+                <a href="https://www.douban.com/group/topic/292579186/" target="_blank" class="alert-link">
+                    <span class="douban-logo">
+                        <span class="douban-d">d</span>
+                        <span class="douban-o">o</span>
+                        <span class="douban-u">u</span>
+                        <span class="douban-b">b</span>
+                        <span class="douban-a">a</span>
+                        <span class="douban-n">n</span>
+                    </span>
+                    小组讨论</a>，欢迎改进
+            </p>
+        </div>
+        <div class="ml-2">
+            <!-- 插入小动画图 -->
+            <img src="dist/note.gif" alt="">
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="alertModal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">提示</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <ul id="errorList"></ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="bottom-navigation">
+    <a href="index.html">💰 FIRE计算器</a>
+    <a href="clock.html">⏰ FIRE时钟</a>
+</div>
+<script src="dist/js/jquery-3.7.0.min.js"></script>
+<script src="dist/js/bootstrap.min.js"></script>
+<script src="dist/js/j020423032508.js"></script>
+<script src="dist/chart.min.js"></script>
+<script>
+    updatePrincipalDisplay();
+    updateMonthlyExpensesDisplay();
+    updateStableIncomeDisplay();
+    principalEle.addEventListener("input", updatePrincipalDisplay);
+    stableIncomeEle.addEventListener("input", updateStableIncomeDisplay);
+    annualExpensesEle.addEventListener("input", updateMonthlyExpensesDisplay);
+    startYearEle.value = currentSystemYear;
+
+    function calculateInterest(noChart) {
+        //console.log(additionalExpensesMap)
+        let principal = parseFloat(principalEle.value.toString());
+        let annualInterestRate = parseFloat(annualInterestRateEle.value);
+        let stableIncome = parseFloat(stableIncomeEle.value.toString());
+        let annualExpenses = parseFloat(annualExpensesEle.value.toString());
+        let inflationRate = parseFloat(inflationRateEle.value);
+        let yearCount = 1;
+        let maxIterations = 101;
+        let floatingInfo = parseFloatInfo(principal, annualInterestRate, stableIncome, annualExpenses, inflationRate);
+        let errors = parseError(principal, annualInterestRate, stableIncome, annualExpenses, inflationRate);
+        if (errors.length > 0) {
+            showAlert(errors);
+            return;
+        }
+
+        let resultTable = document.getElementById("resultTable");
+        let pageTitle = document.getElementById("pageTitle");
+        let startYear = parseInt(startYearEle.value);
+        resultTable.innerHTML = "";
+
+        let years = [];
+        let interests = [];
+        let principals = [];
+        let expenses = [];
+
+        liveYear = -1;
+        let negativeTimes = 0;
+        let annualInterest;
+        annualExpenses *= -1;
+
+        let currentYear = startYear;
+        while (maxIterations > 0) {
+            annualExpenses = (1 + (inflationRate / 100)) * annualExpenses;
+
+            let additionalExpenses = additionalExpensesMap.has(yearCount) ? additionalExpensesMap.get(yearCount) : 0;
+            let additionalIncome = additionalIncomeMap.has(yearCount) ? additionalIncomeMap.get(yearCount) : 0;
+
+            annualInterest = (principal - ((annualExpenses + additionalExpenses) * -1)) * (annualInterestRate / 100);
+            principal = principal + (annualExpenses + additionalExpenses) + annualInterest + additionalIncome + stableIncome;
+
+            //将年利息和本金小于0的值替换为0
+            annualInterest = Math.max(annualInterest, 0);
+            principal = Math.max(principal, 0);
+
+            let newRow = resultTable.insertRow();
+            let year = newRow.insertCell(0);
+            let annualExpensesCell = newRow.insertCell(1);
+            let interestCell = newRow.insertCell(2);
+            let principalCell = newRow.insertCell(3);
+
+            year.classList.add("text-center");
+            annualExpensesCell.classList.add("annual-expenses-cell", "text-center");
+            interestCell.classList.add("interest-cell", "text-center");
+            principalCell.classList.add("principal-cell", "text-center");
+
+            year.innerHTML = yearCount + "<sub class='subscript'>" + (isNaN(currentYear) ? "" : " " + currentYear) + "</sub>";
+            innerHTMLExpense(annualExpensesCell, annualExpenses, additionalExpenses, principal);
+            innerHTMLIncome(interestCell, annualInterest, additionalIncome);
+            principalCell.innerHTML = principal.toFixed(2);
+
+            years.push(yearCount);
+            expenses.push((annualExpenses + additionalExpenses).toFixed(2));
+            interests.push((annualInterest + additionalIncome).toFixed(2));
+            principals.push(principal.toFixed(2));
+
+            //计算并显示剩余年数
+            if (liveYear == -1 && principal <= 0) {
+                liveYear = yearCount - 1;
+            }
+
+            if (principal <= 0) {
+                newRow.classList.add("negative");
+                negativeTimes++;
+            }
+
+            if (negativeTimes > 3 || maxIterations == 1) {
+                year.innerHTML = "⋮";
+                interestCell.innerHTML = "⋮";
+                annualExpensesCell.innerHTML = "⋮";
+                principalCell.innerHTML = "⋮";
+            }
+            if (negativeTimes > 3) {
+                break;
+            }
+            yearCount++;
+            maxIterations--;
+            if (!isNaN(currentYear)) {
+                currentYear++;
+            }
+        }
+        setTableTitle();
+        pageTitle.innerHTML = "FIRE计算器（还能活" + "<span class='liveYear'>" + (liveYear != -1 ? liveYear : '100+') + "</span>年）";
+        drawLineChart(noChart, years, interests, principals, expenses);
+        showFloatingInfo(floatingInfo, liveYear != -1 ? liveYear : 100);
+    }
+
+    window.onload = function () {
+        calculateInterest();
+    };
+</script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
+    <link rel="icon" href="dist/favicon.ico"/>
+    <title>FIRE时钟</title>
+
+    <link rel="stylesheet" href="dist/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="dist/css/c070423032508.css">
+    <link rel="stylesheet" type="text/css" href="dist/css/c220423282110.css">
+    <style>
+        .center-text {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .hide-button {
+            visibility: hidden;
+        }
+
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: none;
+            background-position: right center;
+        }
+
+        .green-text {;
+            color: rgb(44, 160, 44);
+        }
+
+        .gray-text {
+            color: gray
+        }
+
+        .btn-outline-secondary {
+            border-radius: 0;
+        }
+
+        a.text-decoration-none.hover-color-change:hover {
+            color: #FF00FF !important;
+        }
+
+        .rounded-btn {
+            border-radius: 50%;
+        }
+
+        #scheduleText {
+            font-size: 90%;
+            color: gray;
+        }
+
+        #currentTime {
+            font-family: 'Arial', sans-serif;
+            font-size: 24px;
+            color: #333;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            padding: 10px 20px;
+            box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+    </style>
+
+</head>
+<body>
+
+
+<div class="table-responsive">
+    <div class="d-flex justify-content-between align-items-center">
+        <span id="currentTime" class="mx-auto"></span>
+    </div>
+    <div class="center-text">
+        <svg id="clock"></svg>
+    </div>
+    <div class="center-text">
+        <span id="toggleCurrentText" onclick="toggleCurrentTime()" style="font-size: 90%;cursor: pointer;">关闭当前时间</span>
+    </div>
+
+    <table class="table table-hover table-bordered text-center">
+        <thead>
+        <tr>
+            <th></th>
+            <th class="text-center align-top">开始</th>
+            <th class="text-center align-top">结束</th>
+            <th class="text-center align-top" id="totalDuration">时长</th>
+            <th class="text-center align-top">日程(<a href="https://emojixd.com"
+                                                    class="text-decoration-none hover-color-change" target="_blank"
+                                                    style="color: inherit;">emoji</a>)
+            </th>
+            <th class="text-center align-top">操作</th>
+        </tr>
+        </thead>
+        <tbody id="scheduleTable">
+        </tbody>
+    </table>
+</div>
+<div class="row position-relative">
+    <div class="col-md-7">
+        <textarea id="scheduleText" class="form-control" cols="50" placeholder="粘贴元数据(用已保存的元数据快速渲染)"></textarea>
+    </div>
+    <div class="col-md-5">
+        <div class="text-center">
+            <p class="gray-text">元数据</p>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+            <button id="copyButton" class="btn btn-outline-secondary rounded-circle" onclick="copyToClipboard()">复制📄</button>
+            <button id="parseButton" class="btn btn-outline-secondary rounded-circle" onclick="parseScheduleText()">解析📊</button>
+            <button class="btn btn-outline-secondary rounded-circle" onclick="clearScheduleText()">清空🗑️</button>
+        </div>
+        <div class="toast" id="copyToast" data-delay="2000"
+             style="position: absolute; top: 60%; right: 50%; transform: translateX(50%);">
+            <div class="toast-body bg-secondary text-white">
+                已复制,记得保存好
+            </div>
+        </div>
+        <div class="toast" id="parseToast" data-delay="100"
+             style="position: absolute;top: 60%; right: 50%; transform: translateX(50%);">
+            <div class="toast-body bg-secondary text-white">
+                解析成功
+            </div>
+        </div>
+        <div class="toast" id="clearToast" data-delay="100"
+             style="position: absolute;top: 60%; right: 50%; transform: translateX(50%);">
+            <div class="toast-body bg-secondary text-white">
+                已清空
+            </div>
+        </div>
+    </div>
+</div>
+<div class="bottom-navigation">
+    <a href="index.html">💰 FIRE计算器</a>
+    <a href="clock.html">⏰ FIRE时钟</a>
+</div>
+
+
+<script src="dist/js/jquery-3.7.0.min.js"></script>
+<script src="dist/js/bootstrap.min.js"></script>
+<script src="dist/js/d3js.org_d3.v7.min.js"></script>
+<script src="dist/js/j171823171709.js"></script>
+<script>
+    $(document).ready(function () {
+        renderSchedule();
+        $("#addRow").click(function () {
+            addRow();
+        });
+        $("#scheduleText").on("input", function () {
+            updateTextareaRows();
+        });
+    });
+</script>
+</body>
+</html>
