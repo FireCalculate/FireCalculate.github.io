@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
+    <link rel="icon" href="dist/favicon.ico"/>
+    <title>房产租售比计算器</title>
+    <link rel="stylesheet" href="dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="dist/css/271524252010.css">
+    <link rel="stylesheet" href="dist/css/c220423282110.css">
+</head>
+
+<body>
+<div class="container mt-5">
+    <h2 class="text-center">房产租售比计算器</h2>
+    <form id="calculator-form">
+        <div class="row mb-4">
+            <div class="col-sm-3">
+                <label for="unitPrice" class="form-label">单价 (￥)</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="unitPrice" placeholder="请输入单价" value="18000">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary btn-md" type="button" onclick="decrementUnitPrice()">-</button>
+                        <button class="btn btn-outline-secondary btn-md" type="button" onclick="incrementUnitPrice()">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-2">
+                <label for="area" class="form-label">面积 (㎡)</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="area" placeholder="请输入面积" value="90">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary btn-md" type="button" onclick="decrementArea()">-</button>
+                        <button class="btn btn-outline-secondary btn-md" type="button" onclick="incrementArea()">+</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <label for="totalPrice" class="form-label">房价 (单价×面积)</label>
+                <input type="number" class="form-control" id="totalPrice" placeholder="房价" readonly>
+            </div>
+            <div class="col-sm-3">
+                <label for="rent" class="form-label">月租 (￥)</label>
+                <div class="input-group">
+                    <input type="number" step="100" class="form-control" id="rent" placeholder="请输入月租" value="3800">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary btn-md" type="button" onclick="decrementRent()">-</button>
+                        <button class="btn btn-outline-secondary btn-md" type="button" onclick="incrementRent()">+</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-1">
+                <button type="button" class="btn btn-black btn-lg" onclick="calculate(false)">计算</button>
+            </div>
+        </div>
+
+        <table class="result-table table table-bordered table-hover">
+            <thead class="thead-dark">
+            <tr>
+                <th>计算方式</th>
+                <th>月租(￥)</th>
+                <th>年租<br><span class="th-info">(月租×12)</span></th>
+                <th>租金回报率<br><span class="th-info">(年租÷房价)</span></th>
+                <th>租售比<br><span class="th-info">(房价÷月租)</span></th>
+                <th>年租售比<br><span class="th-info">(房价÷年租)</span></th>
+            </tr>
+            </thead>
+            <tbody id="result-body">
+            <!-- Calculation results will be displayed here -->
+            </tbody>
+        </table>
+    </form>
+</div>
+<div class="alert alert-info bg-fbfbfa border-0 rounded-0" role="alert">
+    <div class="d-flex align-items-center">
+        <div class="flex-grow-1">
+            <p class="mb-2">
+                📌租售比是指房子的价格与每月租金之间的比值，它用来衡量买房和租房的划算程度。简单来说就是：房价相当于多少个月的租金。
+            </p>
+        </div>
+    </div>
+</div>
+<div class="bottom-navigation">
+    <a href="index.html">💰 FIRE计算器</a>
+    <a href="clock.html">⏰ FIRE时钟</a>
+    <a href="rental.html">🏠 房产租售比</a>
+</div>
+<script src="dist/js/jquery-3.7.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        calculate(false);
+        $('#unitPrice, #area, #rent').on('input', function () {
+            calculate(false);
+        });
+    });
+
+    function calculate(check) {
+        var unitPrice = parseFloat($('#unitPrice').val());
+        var area = parseFloat($('#area').val());
+        var rent = parseFloat($('#rent').val());
+
+        if (check && (isNaN(unitPrice) || isNaN(area) || isNaN(rent))) {
+            alert("请输入所有字段");
+            return;
+        }
+
+        var totalPrice = unitPrice * area;
+        $('#totalPrice').val(totalPrice.toFixed(2));
+
+        var results = [
+            { name: '按当前月租计算', monthRent: rent, yearRent: rent * 12, ratio: 12, calcType: null },
+            { name: '按200租售比', monthRent: totalPrice / 200, yearRent: (totalPrice / 200) * 12, ratio: 200, calcType: 200 },
+            { name: '按300租售比', monthRent: totalPrice / 300, yearRent: (totalPrice / 300) * 12, ratio: 300, calcType: 300 },
+            { name: '按400租售比', monthRent: totalPrice / 400, yearRent: (totalPrice / 400) * 12, ratio: 400, calcType: 400 },
+            { name: '按500租售比', monthRent: totalPrice / 500, yearRent: (totalPrice / 500) * 12, ratio: 500, calcType: 500 },
+            { name: '按600租售比', monthRent: totalPrice / 600, yearRent: (totalPrice / 600) * 12, ratio: 600, calcType: 600 },
+            { name: '按700租售比', monthRent: totalPrice / 700, yearRent: (totalPrice / 700) * 12, ratio: 700, calcType: 700 },
+            { name: '按800租售比', monthRent: totalPrice / 800, yearRent: (totalPrice / 800) * 12, ratio: 800, calcType: 800 }
+        ];
+
+
+        var resultBody = results.map((result, index) => {
+            var rentReturnRate = (result.yearRent / totalPrice) * 100;
+            var saleRentRatioMonth = result.calcType ? result.ratio : (totalPrice / result.monthRent).toFixed(2);
+            var saleRentRatioYear = result.calcType ? (result.ratio / 12).toFixed(2) : (totalPrice / result.yearRent).toFixed(2);
+            // 第一行的第二列添加灰色背景和白色文字
+            var firstRowSecondColClass = index === 0 ? 'bg-secondary text-white' : '';
+            // 其它行的第五列添加灰色背景和白色文字
+            var otherRowsFifthColClass = index !== 0 ? 'bg-secondary text-white' : '';
+            // 第一行的第五列加粗
+            var firstRowFifthColBoldClass = index === 0 ? 'font-weight-bold' : '';
+            // 其它行的第二列加粗
+            var otherRowsSecondColBoldClass = index !== 0 ? 'font-weight-bold' : '';
+
+            return `
+        <tr>
+            <td>${result.name}</td>
+            <td class="${firstRowSecondColClass} ${otherRowsSecondColBoldClass}">${result.monthRent.toFixed(2)}</td>
+            <td>${result.yearRent.toFixed(2)}</td>
+            <td>${rentReturnRate.toFixed(2)}%</td>
+            <td class="${otherRowsFifthColClass} ${firstRowFifthColBoldClass}">${saleRentRatioMonth}</td>
+            <td>${saleRentRatioYear}</td>
+        </tr>
+    `;
+        }).join('');
+
+        $('#result-body').html(resultBody);
+    }
+
+    function incrementRent() {
+        let rent = parseFloat($('#rent').val());
+        $('#rent').val((rent + 100));
+        calculate(false);
+    }
+
+    function decrementRent() {
+        let rent = parseFloat($('#rent').val());
+        $('#rent').val((rent - 100));
+        calculate(false);
+    }
+    function incrementUnitPrice() {
+        let unitPrice = parseFloat($('#unitPrice').val());
+        $('#unitPrice').val((unitPrice + 1000)); // 每次增加 1000
+        calculate(false);
+    }
+
+    function decrementUnitPrice() {
+        let unitPrice = parseFloat($('#unitPrice').val());
+        $('#unitPrice').val((unitPrice - 1000)); // 每次减少 1000
+        calculate(false);
+    }
+
+    function incrementArea() {
+        let area = parseFloat($('#area').val());
+        $('#area').val((area + 1)); // 每次增加 1 ㎡
+        calculate(false);
+    }
+
+    function decrementArea() {
+        let area = parseFloat($('#area').val());
+        $('#area').val((area - 1)); // 每次减少 1 ㎡
+        calculate(false);
+    }
+</script>
+
+</body>
+
+</html>
