@@ -15,7 +15,7 @@
     <h2 class="text-center">房产租售比计算器</h2>
     <form id="calculator-form">
         <div class="row mb-4">
-            <div class="col-sm-2">
+            <div class="col-sm-3">
                 <label for="unitPrice" class="form-label">单价 (￥)</label>
                 <div class="input-group">
                     <input type="number" class="form-control" id="unitPrice" placeholder="请输入单价" value="18000">
@@ -37,7 +37,7 @@
                 </div>
             </div>
 
-            <div class="col-sm-2">
+            <div class="col-sm-3">
                 <label for="interest" class="form-label">利息 (￥)</label>
                 <div class="input-group">
                     <input type="number" class="form-control" id="interest" placeholder="请输入利息" value="0">
@@ -48,8 +48,8 @@
                 </div>
             </div>
 
-            <div class="col-sm-3">
-                <label for="totalPrice" class="form-label">总价 (单价×面积 + 利息)</label>
+            <div class="col-sm-2">
+                <label for="totalPrice" class="form-label">总价<span class="th-info">(单价×面积 + 利息)</span></label>
                 <input type="number" class="form-control" id="totalPrice" placeholder="总价" readonly>
             </div>
 
@@ -62,9 +62,6 @@
                         <button class="btn btn-outline-secondary btn-md" type="button" onclick="incrementRent()">+</button>
                     </div>
                 </div>
-            </div>
-            <div class="col-sm-1 text-center">
-                <button type="button" class="btn btn-black btn-lg" onclick="calculate(true)">计算</button>
             </div>
         </div>
 
