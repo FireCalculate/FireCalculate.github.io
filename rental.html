@@ -109,15 +109,18 @@
         $('#totalPrice').val(totalPrice.toFixed(2));
 
         var results = [
-            { name: '按当前月租计算', monthRent: rent, yearRent: rent * 12, ratio: 12, calcType: null },
-            { name: '按200租售比', monthRent: totalPrice / 200, yearRent: (totalPrice / 200) * 12, ratio: 200, calcType: 200 },
-            { name: '按300租售比', monthRent: totalPrice / 300, yearRent: (totalPrice / 300) * 12, ratio: 300, calcType: 300 },
-            { name: '按400租售比', monthRent: totalPrice / 400, yearRent: (totalPrice / 400) * 12, ratio: 400, calcType: 400 },
-            { name: '按500租售比', monthRent: totalPrice / 500, yearRent: (totalPrice / 500) * 12, ratio: 500, calcType: 500 },
-            { name: '按600租售比', monthRent: totalPrice / 600, yearRent: (totalPrice / 600) * 12, ratio: 600, calcType: 600 },
-            { name: '按700租售比', monthRent: totalPrice / 700, yearRent: (totalPrice / 700) * 12, ratio: 700, calcType: 700 },
-            { name: '按800租售比', monthRent: totalPrice / 800, yearRent: (totalPrice / 800) * 12, ratio: 800, calcType: 800 }
+            { name: '按当前月租计算', monthRent: rent, yearRent: rent * 12, ratio: 12, calcType: null }
         ];
+
+        for (var i = 200; i <= 900; i += 100) {
+            results.push({
+                name: `按${i}租售比`,
+                monthRent: totalPrice / i,
+                yearRent: (totalPrice / i) * 12,
+                ratio: i,
+                calcType: i
+            });
+        }
 
 
         var resultBody = results.map((result, index) => {
