@@ -15,7 +15,7 @@
     <h2 class="text-center">房产租售比计算器</h2>
     <form id="calculator-form">
         <div class="row mb-4">
-            <div class="col-sm-3">
+            <div class="col-sm-2">
                 <label for="unitPrice" class="form-label">单价 (￥)</label>
                 <div class="input-group">
                     <input type="number" class="form-control" id="unitPrice" placeholder="请输入单价" value="18000">
@@ -36,11 +36,24 @@
                     </div>
                 </div>
             </div>
-            <div class="col-sm-3">
-                <label for="totalPrice" class="form-label">房价 (单价×面积)</label>
-                <input type="number" class="form-control" id="totalPrice" placeholder="房价" readonly>
+
+            <div class="col-sm-2">
+                <label for="interest" class="form-label">利息 (￥)</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="interest" placeholder="请输入利息" value="0">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary btn-md" type="button" onclick="decrementInterest()">-</button>
+                        <button class="btn btn-outline-secondary btn-md" type="button" onclick="incrementInterest()">+</button>
+                    </div>
+                </div>
             </div>
+
             <div class="col-sm-3">
+                <label for="totalPrice" class="form-label">总价 (单价×面积 + 利息)</label>
+                <input type="number" class="form-control" id="totalPrice" placeholder="总价" readonly>
+            </div>
+
+            <div class="col-sm-2">
                 <label for="rent" class="form-label">月租 (￥)</label>
                 <div class="input-group">
                     <input type="number" step="100" class="form-control" id="rent" placeholder="请输入月租" value="3800">
@@ -50,8 +63,8 @@
                     </div>
                 </div>
             </div>
-            <div class="col-sm-1">
-                <button type="button" class="btn btn-black btn-lg" onclick="calculate(false)">计算</button>
+            <div class="col-sm-1 text-center">
+                <button type="button" class="btn btn-black btn-lg" onclick="calculate(true)">计算</button>
             </div>
         </div>
 
@@ -61,9 +74,9 @@
                 <th>计算方式</th>
                 <th>月租(￥)</th>
                 <th>年租<br><span class="th-info">(月租×12)</span></th>
-                <th>租金回报率<br><span class="th-info">(年租÷房价)</span></th>
-                <th>租售比<br><span class="th-info">(房价÷月租)</span></th>
-                <th>年租售比<br><span class="th-info">(房价÷年租)</span></th>
+                <th>租金回报率<br><span class="th-info">(年租÷总价)</span></th>
+                <th>租售比<br><span class="th-info">(总价÷月租)</span></th>
+                <th>年租售比<br><span class="th-info">(总价÷年租)</span></th>
             </tr>
             </thead>
             <tbody id="result-body">
@@ -72,25 +85,12 @@
         </table>
     </form>
 </div>
-<div class="alert alert-info bg-fbfbfa border-0 rounded-0" role="alert">
-    <div class="d-flex align-items-center">
-        <div class="flex-grow-1">
-            <p class="mb-2">
-                📌<a href="https://baike.baidu.com/item/%E7%A7%9F%E5%94%AE%E6%AF%94" target="_blank">租售比</a>是指房子的价格与每月租金之间的比值，它用来衡量买房和租房的划算程度。简单来说就是：房价相当于多少个月的租金。
-            </p>
-        </div>
-    </div>
-</div>
-<div class="bottom-navigation">
-    <a href="index.html">💰 FIRE计算器</a>
-    <a href="clock.html">⏰ FIRE时钟</a>
-    <a href="rental.html">🏠 房产租售比</a>
-</div>
+
 <script src="dist/js/jquery-3.7.0.min.js"></script>
 <script>
     $(document).ready(function () {
         calculate(false);
-        $('#unitPrice, #area, #rent').on('input', function () {
+        $('#unitPrice, #area, #interest, #rent').on('input', function () {
             calculate(false);
         });
     });
@@ -98,14 +98,15 @@
     function calculate(check) {
         var unitPrice = parseFloat($('#unitPrice').val());
         var area = parseFloat($('#area').val());
+        var interest = parseFloat($('#interest').val());
         var rent = parseFloat($('#rent').val());
 
-        if (check && (isNaN(unitPrice) || isNaN(area) || isNaN(rent))) {
+        if (check && (isNaN(unitPrice) || isNaN(area) || isNaN(interest) || isNaN(rent))) {
             alert("请输入所有字段");
             return;
         }
 
-        var totalPrice = unitPrice * area;
+        var totalPrice = (unitPrice * area) + interest;
         $('#totalPrice').val(totalPrice.toFixed(2));
 
         var results = [
@@ -121,7 +122,6 @@
                 calcType: i
             });
         }
-
 
         var resultBody = results.map((result, index) => {
             var rentReturnRate = (result.yearRent / totalPrice) * 100;
@@ -162,27 +162,40 @@
         $('#rent').val((rent - 100));
         calculate(false);
     }
+
     function incrementUnitPrice() {
         let unitPrice = parseFloat($('#unitPrice').val());
-        $('#unitPrice').val((unitPrice + 1000)); // 每次增加 1000
+        $('#unitPrice').val((unitPrice + 1000));
         calculate(false);
     }
 
     function decrementUnitPrice() {
         let unitPrice = parseFloat($('#unitPrice').val());
-        $('#unitPrice').val((unitPrice - 1000)); // 每次减少 1000
+        $('#unitPrice').val((unitPrice - 1000));
         calculate(false);
     }
 
     function incrementArea() {
         let area = parseFloat($('#area').val());
-        $('#area').val((area + 1)); // 每次增加 1 ㎡
+        $('#area').val((area + 1));
         calculate(false);
     }
 
     function decrementArea() {
         let area = parseFloat($('#area').val());
-        $('#area').val((area - 1)); // 每次减少 1 ㎡
+        $('#area').val((area - 1));
+        calculate(false);
+    }
+
+    function incrementInterest() {
+        let interest = parseFloat($('#interest').val());
+        $('#interest').val((interest + 1000)); // 每次增加 1000
+        calculate(false);
+    }
+
+    function decrementInterest() {
+        let interest = parseFloat($('#interest').val());
+        $('#interest').val((interest - 1000)); // 每次减少 1000
         calculate(false);
     }
 </script>
