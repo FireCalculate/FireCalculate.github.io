@@ -72,7 +72,7 @@
                 <th>月租(￥)</th>
                 <th>年租<br><span class="th-info">(月租×12)</span></th>
                 <th>租金回报率<br><span class="th-info">(年租÷总价)</span></th>
-                <th>租售比<br><span class="th-info">(总价÷月租)</span></th>
+                <th>租售比↓<br><span class="th-info">(总价÷月租)</span></th>
                 <th>年租售比<br><span class="th-info">(总价÷年租)</span></th>
             </tr>
             </thead>
@@ -93,21 +93,23 @@
     });
 
     function calculate(check) {
-        var unitPrice = parseFloat($('#unitPrice').val());
-        var area = parseFloat($('#area').val());
-        var interest = parseFloat($('#interest').val());
-        var rent = parseFloat($('#rent').val());
+        var unitPrice = parseFloat($('#unitPrice').val()) || 0;
+        var area = parseFloat($('#area').val()) || 0;
+        var interest = parseFloat($('#interest').val()) || 0;
+        var rent = parseFloat($('#rent').val()) || 0;
 
         if (check && (isNaN(unitPrice) || isNaN(area) || isNaN(interest) || isNaN(rent))) {
             alert("请输入所有字段");
             return;
         }
 
+        // 计算总价
         var totalPrice = (unitPrice * area) + interest;
         $('#totalPrice').val(totalPrice.toFixed(2));
 
+        // 创建结果数组并保存初始样式状态
         var results = [
-            { name: '按当前月租计算', monthRent: rent, yearRent: rent * 12, ratio: 12, calcType: null }
+            { name: '按当前月租计算', monthRent: rent, yearRent: rent * 12, saleRentRatio: totalPrice / rent, calcType: null, isFirst: true }
         ];
 
         for (var i = 200; i <= 900; i += 100) {
@@ -115,36 +117,35 @@
                 name: `按${i}租售比`,
                 monthRent: totalPrice / i,
                 yearRent: (totalPrice / i) * 12,
-                ratio: i,
-                calcType: i
+                saleRentRatio: i,
+                calcType: i,
+                isFirst: false
             });
         }
 
+        // 按照租售比从小到大排序
+        results.sort((a, b) => a.saleRentRatio - b.saleRentRatio);
+
+        // 生成结果行
         var resultBody = results.map((result, index) => {
             var rentReturnRate = (result.yearRent / totalPrice) * 100;
-            var saleRentRatioMonth = result.calcType ? result.ratio : (totalPrice / result.monthRent).toFixed(2);
-            var saleRentRatioYear = result.calcType ? (result.ratio / 12).toFixed(2) : (totalPrice / result.yearRent).toFixed(2);
-            // 第一行的第二列添加灰色背景和白色文字
-            var firstRowSecondColClass = index === 0 ? 'bg-secondary text-white' : '';
-            // 其它行的第五列添加灰色背景和白色文字
-            var otherRowsFifthColClass = index !== 0 ? 'bg-secondary text-white' : '';
-            // 第一行的第五列加粗
-            var firstRowFifthColBoldClass = index === 0 ? 'font-weight-bold' : '';
-            // 其它行的第二列加粗
-            var otherRowsSecondColBoldClass = index !== 0 ? 'font-weight-bold' : '';
-
+            var saleRentRatioYear = result.calcType ? (result.saleRentRatio / 12).toFixed(2) : (totalPrice / result.yearRent).toFixed(2);
+            // 设置样式：根据初始样式状态进行判断
+            var firstRowSecondColClass = result.isFirst ? 'bg-secondary text-white' : '';
+            var otherRowsFifthColClass = !result.isFirst ? 'bg-secondary text-white' : '';
+            var firstRowFifthColBoldClass = result.isFirst ? 'font-weight-bold' : '';
+            var otherRowsSecondColBoldClass = !result.isFirst ? 'font-weight-bold' : '';
             return `
         <tr>
             <td>${result.name}</td>
             <td class="${firstRowSecondColClass} ${otherRowsSecondColBoldClass}">${result.monthRent.toFixed(2)}</td>
             <td>${result.yearRent.toFixed(2)}</td>
             <td>${rentReturnRate.toFixed(2)}%</td>
-            <td class="${otherRowsFifthColClass} ${firstRowFifthColBoldClass}">${saleRentRatioMonth}</td>
+            <td class="${otherRowsFifthColClass} ${firstRowFifthColBoldClass}">${result.saleRentRatio.toFixed(2)}</td>
             <td>${saleRentRatioYear}</td>
         </tr>
-    `;
+        `;
         }).join('');
-
         $('#result-body').html(resultBody);
     }
 
