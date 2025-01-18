@@ -4,7 +4,7 @@ let stableIncomeEle = document.getElementById("stableIncome");
 let annualInterestRateEle = document.getElementById('annualInterestRate');
 let inflationRateEle = document.getElementById('inflationRate');
 let startYearEle = document.getElementById("startYear");
-let currentSystemYear = new Date().getFullYear() + 1;
+let currentSystemYear = 35;
 
 function limitInputLength(input, maxLength) {
     if (input.value.length > maxLength) {
