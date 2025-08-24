@@ -194,6 +194,7 @@
         localStorage.setItem('annualExpenses', annualExpensesEle.value);
         localStorage.setItem('inflationRate', inflationRateEle.value);
         localStorage.setItem('startYear', startYearEle.value);
+        console.log(`Saving to localStorage: Principal: ${principalEle.value}, Annual Interest Rate: ${annualInterestRateEle.value}, Stable Income: ${stableIncomeEle.value}, Annual Expenses: ${annualExpensesEle.value}, Inflation Rate: ${inflationRateEle.value}, Start Year: ${startYearEle.value}`);
     }
 
     updatePrincipalDisplay();
@@ -338,13 +339,7 @@
         if (storedInflationRate) inflationRateEle.value = storedInflationRate;
         if (storedStartYear) startYearEle.value = storedStartYear;
 
-        console.log("localStorage:");
-        console.log("Stored Principal:", storedPrincipal);
-        console.log("Stored Annual Interest Rate:", storedAnnualInterestRate);
-        console.log("Stored Stable Income:", storedStableIncome);
-        console.log("Stored Annual Expenses:", storedAnnualExpenses);
-        console.log("Stored Inflation Rate:", storedInflationRate);
-        console.log("Stored Start Year:", storedStartYear);
+        console.log(`localStorage: Stored Principal: ${storedPrincipal}, Stored Annual Interest Rate: ${storedAnnualInterestRate}, Stored Stable Income: ${storedStableIncome}, Stored Annual Expenses: ${storedAnnualExpenses}, Stored Inflation Rate: ${storedInflationRate}, Stored Start Year: ${storedStartYear}`);
         // 更新显示的数值
         updatePrincipalDisplay();
         updateMonthlyExpensesDisplay();

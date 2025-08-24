@@ -33,6 +33,7 @@ function updateStableIncomeDisplay() {
 function incrementInterestRate() {
     annualInterestRateEle.stepUp();
     calculateInterest();
+    updateLocalStorage();
 }
 
 function decrementInterestRate() {
@@ -40,6 +41,7 @@ function decrementInterestRate() {
         annualInterestRateEle.stepDown();
         calculateInterest();
     }
+    updateLocalStorage();
 }
 
 function resetInterestRate() {
@@ -47,12 +49,14 @@ function resetInterestRate() {
         annualInterestRateEle.value = 0;
         calculateInterest();
     }
+    updateLocalStorage();
 }
 
 function incrementPrincipal() {
     principalEle.stepUp();
     updatePrincipalDisplay();
     calculateInterest();
+    updateLocalStorage();
 }
 
 function decrementPrincipal() {
@@ -61,12 +65,14 @@ function decrementPrincipal() {
         updatePrincipalDisplay();
         calculateInterest();
     }
+    updateLocalStorage();
 }
 
 function incrementAnnualExpenses() {
     annualExpensesEle.stepUp();
     updateMonthlyExpensesDisplay();
     calculateInterest();
+    updateLocalStorage();
 }
 
 function decrementAnnualExpenses() {
@@ -75,11 +81,13 @@ function decrementAnnualExpenses() {
         updateMonthlyExpensesDisplay();
         calculateInterest();
     }
+    updateLocalStorage();
 }
 
 function incrementInflationRate() {
     inflationRateEle.stepUp();
     calculateInterest();
+    updateLocalStorage();
 }
 
 function decrementInflationRate() {
@@ -87,6 +95,7 @@ function decrementInflationRate() {
         inflationRateEle.stepDown();
         calculateInterest();
     }
+    updateLocalStorage();
 }
 
 function resetInflationRate() {
@@ -94,12 +103,14 @@ function resetInflationRate() {
         inflationRateEle.value = 0;
         calculateInterest();
     }
+    updateLocalStorage();
 }
 
 function incrementStableIncome() {
     stableIncomeEle.stepUp();
     updateStableIncomeDisplay();
     calculateInterest();
+    updateLocalStorage();
 }
 
 function decrementStableIncome() {
@@ -108,6 +119,7 @@ function decrementStableIncome() {
         updateStableIncomeDisplay();
         calculateInterest();
     }
+    updateLocalStorage();
 }
 
 function resetStableIncome() {
@@ -116,6 +128,7 @@ function resetStableIncome() {
         updateStableIncomeDisplay();
         calculateInterest();
     }
+    updateLocalStorage();
 }
 
 function incrementStartYear() {
