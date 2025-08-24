@@ -103,7 +103,8 @@
                 <span class="mr-2">年数<span class="th-info">(年龄)</span></span>
                 <div class="d-flex flex-column">
                     <div class="input-group">
-                        <input type="number" id="startYear" class="form-control form-control-sm text-center" step="1" placeholder="年龄" readonly>
+                        <input type="number" id="startYear" class="form-control form-control-sm text-center" step="1"
+                               placeholder="年龄" readonly>
                         <div class="input-group-append">
                             <button class="btn btn-outline-secondary btn-sm" type="button" onclick="resetStartYear()">
                                 ×
@@ -185,12 +186,41 @@
 <script src="dist/js/j020423032508.js"></script>
 <script src="dist/chart.min.js"></script>
 <script>
+    // 更新表单数据到 localStorage
+    function updateLocalStorage() {
+        localStorage.setItem('principal', principalEle.value);
+        localStorage.setItem('annualInterestRate', annualInterestRateEle.value);
+        localStorage.setItem('stableIncome', stableIncomeEle.value);
+        localStorage.setItem('annualExpenses', annualExpensesEle.value);
+        localStorage.setItem('inflationRate', inflationRateEle.value);
+        localStorage.setItem('startYear', startYearEle.value);
+    }
+
     updatePrincipalDisplay();
     updateMonthlyExpensesDisplay();
     updateStableIncomeDisplay();
-    principalEle.addEventListener("input", updatePrincipalDisplay);
-    stableIncomeEle.addEventListener("input", updateStableIncomeDisplay);
-    annualExpensesEle.addEventListener("input", updateMonthlyExpensesDisplay);
+    principalEle.addEventListener("input", function () {
+        updatePrincipalDisplay();
+        updateLocalStorage();
+    });
+    annualInterestRateEle.addEventListener("input", function () {
+        updateLocalStorage();
+    });
+    stableIncomeEle.addEventListener("input", function () {
+        updateStableIncomeDisplay();
+        updateLocalStorage();
+    });
+    annualExpensesEle.addEventListener("input", function () {
+        updateMonthlyExpensesDisplay();
+        updateLocalStorage();
+    });
+    inflationRateEle.addEventListener("input", function () {
+        updateLocalStorage();
+    });
+    startYearEle.addEventListener("input", function () {
+        updateLocalStorage();
+    });
+
     startYearEle.value = currentSystemYear;
 
     function calculateInterest(noChart) {
@@ -290,8 +320,36 @@
         showFloatingInfo(floatingInfo, liveYear != -1 ? liveYear : 100);
     }
 
+    // 页面加载时从 localStorage 恢复表单数据
     window.onload = function () {
-        calculateInterest();
+        // 获取本地存储的数据
+        let storedPrincipal = localStorage.getItem('principal');
+        let storedAnnualInterestRate = localStorage.getItem('annualInterestRate');
+        let storedStableIncome = localStorage.getItem('stableIncome');
+        let storedAnnualExpenses = localStorage.getItem('annualExpenses');
+        let storedInflationRate = localStorage.getItem('inflationRate');
+        let storedStartYear = localStorage.getItem('startYear');
+
+        // 如果本地存储中有数据，则恢复表单值
+        if (storedPrincipal) principalEle.value = storedPrincipal;
+        if (storedAnnualInterestRate) annualInterestRateEle.value = storedAnnualInterestRate;
+        if (storedStableIncome) stableIncomeEle.value = storedStableIncome;
+        if (storedAnnualExpenses) annualExpensesEle.value = storedAnnualExpenses;
+        if (storedInflationRate) inflationRateEle.value = storedInflationRate;
+        if (storedStartYear) startYearEle.value = storedStartYear;
+
+        console.log("localStorage:");
+        console.log("Stored Principal:", storedPrincipal);
+        console.log("Stored Annual Interest Rate:", storedAnnualInterestRate);
+        console.log("Stored Stable Income:", storedStableIncome);
+        console.log("Stored Annual Expenses:", storedAnnualExpenses);
+        console.log("Stored Inflation Rate:", storedInflationRate);
+        console.log("Stored Start Year:", storedStartYear);
+        // 更新显示的数值
+        updatePrincipalDisplay();
+        updateMonthlyExpensesDisplay();
+        updateStableIncomeDisplay();
+        calculateInterest(); // 重新计算以更新页面
     };
 </script>
 </body>
