@@ -294,5 +294,97 @@
         calculateInterest();
     };
 </script>
+<script>
+    // === 本地持久化（localStorage） ===
+    const STORAGE_KEY = 'fireCalcState.v1';
+
+    // 保存当前表单状态
+    function saveState() {
+        try {
+            const state = {
+                principal: principalEle?.value ?? null,
+                annualInterestRate: annualInterestRateEle?.value ?? null,
+                stableIncome: stableIncomeEle?.value ?? null,
+                annualExpenses: annualExpensesEle?.value ?? null,
+                inflationRate: inflationRateEle?.value ?? null,
+                startYear: startYearEle?.value ?? null,
+                // 如你的代码里有这两个 Map，则也一起保存；没有也不报错
+                extraExpenses: (typeof additionalExpensesMap !== 'undefined' && additionalExpensesMap instanceof Map)
+                    ? Array.from(additionalExpensesMap.entries())
+                    : null,
+                extraIncome: (typeof additionalIncomeMap !== 'undefined' && additionalIncomeMap instanceof Map)
+                    ? Array.from(additionalIncomeMap.entries())
+                    : null,
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {
+            console.warn('saveState failed:', e);
+        }
+    }
+
+    // 从本地恢复表单状态
+    function restoreState() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return;
+
+            const s = JSON.parse(raw);
+            if (s.principal != null) principalEle.value = s.principal;
+            if (s.annualInterestRate != null) annualInterestRateEle.value = s.annualInterestRate;
+            if (s.stableIncome != null) stableIncomeEle.value = s.stableIncome;
+            if (s.annualExpenses != null) annualExpensesEle.value = s.annualExpenses;
+            if (s.inflationRate != null) inflationRateEle.value = s.inflationRate;
+            if (s.startYear != null) startYearEle.value = s.startYear;
+
+            if (s.extraExpenses && typeof additionalExpensesMap !== 'undefined') {
+                try { additionalExpensesMap = new Map(s.extraExpenses); } catch {}
+            }
+            if (s.extraIncome && typeof additionalIncomeMap !== 'undefined') {
+                try { additionalIncomeMap = new Map(s.extraIncome); } catch {}
+            }
+        } catch (e) {
+            console.warn('restoreState failed:', e);
+        } finally {
+            // 更新你已有的展示
+            updatePrincipalDisplay();
+            updateMonthlyExpensesDisplay();
+            updateStableIncomeDisplay();
+        }
+    }
+
+    // 给输入控件绑定监听（手动输入即时保存）
+    [principalEle, annualInterestRateEle, stableIncomeEle, annualExpensesEle, inflationRateEle, startYearEle]
+        .filter(Boolean)
+        .forEach(el => {
+            el.addEventListener('input', saveState);
+            el.addEventListener('change', saveState);
+        });
+
+    // 页面关闭/刷新前兜底保存（即使你没点“计算”也能记住）
+    window.addEventListener('beforeunload', saveState);
+
+    // 先恢复再计算
+    window.addEventListener('load', () => {
+        restoreState();
+        // 这里重新算一遍，保证图表/表格和恢复后的值一致
+        calculateInterest();
+    });
+
+    // 给 calculateInterest 打个“钩子”，每次计算后顺手保存一次
+    (function injectSaveAfterCalc(){
+        const orig = calculateInterest;
+        window.calculateInterest = function(...args){
+            const ret = orig.apply(this, args);
+            try { saveState(); } catch {}
+            return ret;
+        }
+    })();
+
+    // 如果需要一键清空本地保存（可选）：在控制台调这个函数即可
+    window.clearFireCalcState = function(){
+        localStorage.removeItem(STORAGE_KEY);
+        console.log('已清空本地保存，下次刷新将回到默认值。');
+    };
+</script>
 </body>
 </html>
