@@ -87,6 +87,7 @@
         <label><br></label>
         <div class="input-group justify-content-center">
             <button class="btn btn-black btn-lg" onclick="calculateInterest()">计算</button>
+            <button class="btn btn-outline-secondary btn-lg ml-2" onclick="resetAllData()">重置</button>
         </div>
     </div>
 </div>
@@ -346,6 +347,40 @@
         updateStableIncomeDisplay();
         calculateInterest(); // 重新计算以更新页面
     };
+    function resetAllData() {
+        // 重置表单字段
+        principalEle.value = 2000000;
+        annualInterestRateEle.value = 2.000;
+        stableIncomeEle.value = 0;
+        annualExpensesEle.value = 45000;
+        inflationRateEle.value = 2.229;
+        startYearEle.value = currentSystemYear;
+
+        // 清除 localStorage 中保存的数据
+        localStorage.removeItem('principal');
+        localStorage.removeItem('annualInterestRate');
+        localStorage.removeItem('stableIncome');
+        localStorage.removeItem('annualExpenses');
+        localStorage.removeItem('inflationRate');
+        localStorage.removeItem('startYear');
+
+        // 获取清空后的 localStorage 数据
+        let storedPrincipal = localStorage.getItem('principal');
+        let storedAnnualInterestRate = localStorage.getItem('annualInterestRate');
+        let storedStableIncome = localStorage.getItem('stableIncome');
+        let storedAnnualExpenses = localStorage.getItem('annualExpenses');
+        let storedInflationRate = localStorage.getItem('inflationRate');
+        let storedStartYear = localStorage.getItem('startYear');
+
+        // 打印 localStorage 数据，确认其已被清除
+        console.log(`localStorage after reset: Stored Principal: ${storedPrincipal}, Stored Annual Interest Rate: ${storedAnnualInterestRate}, Stored Stable Income: ${storedStableIncome}, Stored Annual Expenses: ${storedAnnualExpenses}, Stored Inflation Rate: ${storedInflationRate}, Stored Start Year: ${storedStartYear}`);
+
+        // 更新显示
+        updatePrincipalDisplay();
+        updateMonthlyExpensesDisplay();
+        updateStableIncomeDisplay();
+        calculateInterest(); // 重新计算以更新页面
+    }
 </script>
 </body>
 </html>
