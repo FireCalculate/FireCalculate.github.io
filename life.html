@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
+    <link rel="icon" href="dist/favicon.ico"/>
+    <title>生命余额</title>
+    <link rel="stylesheet" type="text/css" href="dist/css/c070423032508.css">
+    <link rel="stylesheet" type="text/css" href="dist/css/c220423282110.css">
+    <link rel="stylesheet" href="dist/css/bootstrap.min.css">
+    <script src="dist/js/jquery-3.7.0.min.js"></script>
+    <script src="dist/js/bootstrap.min.js"></script>
+    <script src="dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        /* ========= Base ========= */
+        body {
+            background: #fff;
+        }
+
+        /* ========= Pretty form controls ========= */
+        .controls-card {
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px solid #e9ecef;
+            border-radius: .75rem;
+            padding: 12px 14px;
+        }
+
+        .form-label-compact {
+            font-weight: 700;
+            margin-bottom: .35rem;
+        }
+
+        .input-group-slim .form-control {
+            text-align: center;
+        }
+
+        .btn-radio .btn {
+            border-radius: 999px !important;
+            padding: .25rem .85rem;
+            border: 1px solid #ced4da;
+        }
+
+        .btn-radio .btn:not(.active):hover {
+            background: #f8f9fa;
+        }
+
+        .btn-radio .btn.active {
+            box-shadow: 0 0 0 .15rem rgba(13, 110, 253, .15) inset;
+        }
+
+        /* ========= Legend ========= */
+        .legend .legend-box {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 1px solid #ced4da;
+            margin-right: 6px;
+            vertical-align: -2px;
+        }
+
+        .legend .legend-item {
+            margin-right: 16px;
+        }
+
+        /* ========= Phase colors ========= */
+        .past {
+            background: #f1f3f5 !important;
+            color: #868e96;
+        }
+
+        .healthy {
+            background: #ffffff !important;
+        }
+
+        .frail {
+            background: #fff3cd !important;
+        }
+
+        .disabled {
+            background: #f8d7da !important;
+        }
+
+        /* ========= Current month highlight ========= */
+        .now {
+            position: relative;
+            box-shadow: inset 0 0 0 2px #343a40;
+            font-weight: 600;
+            overflow: hidden;
+        }
+
+        .now::before, .now::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .now::before {
+            box-shadow: 0 0 0 0 rgba(52, 58, 64, .55);
+            animation: pulse 1.8s ease-out infinite;
+        }
+
+        .now::after {
+            background: radial-gradient(circle at 30% 30%, #495057 0%, #495057 55%, #868e96 80%, #868e96 100%);
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(52, 58, 64, .55);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(52, 58, 64, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(52, 58, 64, 0);
+            }
+        }
+
+        /* ========= Table ========= */
+        table.lifetable thead th {
+            position: sticky;
+            top: 0;
+            background: #212529;
+            color: #fff;
+            z-index: 2;
+        }
+
+        table.lifetable td, table.lifetable th {
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        table.lifetable td.month-cell {
+            text-align: center;
+            min-width: 38px;
+        }
+
+        table.lifetable td.year-age {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .phase-cell {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            text-align: center;
+            font-weight: 600;
+            color: #444;
+            background: #fafafa;
+            border-right: 1px solid #e9ecef;
+            letter-spacing: 2px;
+        }
+
+        /* ========= Summary card & metrics ========= */
+        .summary-card {
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px solid #e9ecef;
+            border-radius: .75rem;
+        }
+
+        .summary-kicker {
+            font-weight: 700;
+            font-size: 1.125rem;
+        }
+
+        .summary-lines li {
+            margin-bottom: .35rem;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: .1rem .55rem;
+            border-radius: 999px;
+            font-size: .85em;
+            margin-left: .35rem;
+            border: 1px solid rgba(0, 0, 0, .06);
+        }
+
+        .pill-dark {
+            background: #212529;
+            color: #fff;
+        }
+
+        .metric-line {
+            gap: .5rem;
+        }
+
+        .metric-label {
+            flex: 0 0 230px;
+        }
+
+        .metric-progress {
+            flex: 1 1 auto;
+            min-width: 160px;
+        }
+
+        .metric-tail {
+            flex: 0 0 160px;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .progress {
+            height: .6rem;
+            background: #e9ecef;
+        }
+
+        .progress-bar {
+            transition: width .6s ease;
+        }
+
+        .subtle {
+            color: #6c757d;
+        }
+
+        /* ========= Responsive ========= */
+        @media (max-width: 576px) {
+            .phase-cell {
+                writing-mode: horizontal-tb;
+                letter-spacing: 1px;
+            }
+
+            .metric-progress {
+                min-width: 120px;
+            }
+
+            .metric-label, .metric-tail {
+                flex-basis: auto;
+            }
+        }
+
+        /* ====== 语义纹理 ====== */
+        :root {
+            --past-bg: #f1f3f5;
+            --past-stroke: #dee2e6;
+            --healthy-dot: #e9ecef;
+            --frail-base: #fff3cd;
+            --frail-stripe: #ffe69c;
+            --disabled-base: #fdecec;
+            --disabled-accent: rgba(240, 62, 62, .18);
+        }
+
+        table.lifetable td.month-cell {
+            position: relative;
+            cursor: help;
+        }
+
+        .past {
+            background-image: repeating-linear-gradient(135deg, var(--past-bg) 0 8px, #e9ecef 8px 16px);
+            box-shadow: inset 0 0 0 1px var(--past-stroke);
+        }
+
+        .past::after {
+            content: "⏳";
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .9rem;
+            opacity: .35;
+            pointer-events: none;
+        }
+
+        .healthy {
+            background-image: radial-gradient(var(--healthy-dot) .6px, transparent .6px);
+            background-size: 10px 10px;
+            background-color: #fff;
+        }
+
+        .frail {
+            background-image: linear-gradient(180deg, var(--frail-base), var(--frail-base)), repeating-linear-gradient(45deg, transparent 0 8px, var(--frail-stripe) 8px 16px);
+            background-blend-mode: multiply;
+            box-shadow: inset 0 0 0 1px #ffe8a1;
+        }
+
+        .frail::after {
+            content: "⚠️";
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .95rem;
+            opacity: .28;
+            pointer-events: none;
+        }
+
+        .disabled {
+            background-image: linear-gradient(180deg, #fff, var(--disabled-base)), repeating-linear-gradient(45deg, var(--disabled-accent) 0 10px, transparent 10px 20px), repeating-linear-gradient(-45deg, var(--disabled-accent) 0 10px, transparent 10px 20px);
+            background-blend-mode: screen;
+            box-shadow: inset 0 0 0 1px #f5c2c7;
+        }
+
+        .disabled::after {
+            content: "✖";
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .95rem;
+            opacity: .22;
+            pointer-events: none;
+        }
+
+        .legend .legend-box.legend-past {
+            background-image: repeating-linear-gradient(135deg, #f1f3f5 0 8px, #e9ecef 8px 16px);
+        }
+
+        .legend .legend-box.legend-now {
+            background: #fff;
+            box-shadow: inset 0 0 0 2px #343a40;
+        }
+
+        .legend .legend-box.legend-healthy {
+            background-image: radial-gradient(#e9ecef .6px, transparent .6px);
+            background-size: 10px 10px;
+            background-color: #fff;
+        }
+
+        .legend .legend-box.legend-frail {
+            background-image: linear-gradient(180deg, #fff3cd, #fff3cd), repeating-linear-gradient(45deg, transparent 0 8px, #ffe69c 8px 16px);
+        }
+
+        .legend .legend-box.legend-disabled {
+            background-image: linear-gradient(180deg, #fff, #fdecec), repeating-linear-gradient(45deg, rgba(240, 62, 62, .18) 0 10px, transparent 10px 20px), repeating-linear-gradient(-45deg, rgba(240, 62, 62, .18) 0 10px, transparent 10px 20px);
+        }
+
+        /* === 统一控件高度 === */
+        :root {
+            --control-h: 32px; /* 你也可以调成 34/36，看视觉需要 */
+        }
+
+        /* 让 controls-card 里的 input-group 和 btn-group 统一高度 */
+        .controls-card .input-group-sm .form-control,
+        .controls-card .input-group-sm .btn {
+            height: var(--control-h);
+            padding-top: .25rem;
+            padding-bottom: .25rem;
+        }
+
+        /* 单独保证按钮组里的按钮等高、垂直居中 */
+        .controls-card .btn-group-sm .btn {
+            height: var(--control-h);
+            display: inline-flex;
+            align-items: center;
+            line-height: 1; /* 防止行高撑高 */
+        }
+
+        /* 可选：让左右的 +/- 按钮在小尺寸下不显得窄 */
+        .controls-card .input-group-prepend .btn,
+        .controls-card .input-group-append .btn {
+            min-width: 32px;
+            justify-content: center;
+        }
+
+        /* 如果你想让两块控件在同一行“看起来就是一样高”，建议让父容器拉伸对齐 */
+        .controls-card .d-flex.align-items-end {
+            align-items: stretch !important;
+        }
+    </style>
+</head>
+<body class="pb-5">
+<div class="container-fluid py-4">
+
+    <!-- 顶部统计行 -->
+    <div class="d-flex flex-wrap align-items-start justify-content-between">
+
+
+        <!-- 右：控件 -->
+        <div class="controls-card mb-3">
+            <div class="d-flex flex-wrap align-items-end" style="gap: 18px;">
+                <!-- 出生年份 -->
+                <div>
+                    <label class="form-label-compact d-block">出生年份</label>
+                    <div class="input-group input-group-sm input-group-slim" style="max-width: 220px;">
+                        <div class="input-group-prepend">
+                            <button class="btn btn-outline-secondary btn-sm" id="btnBirthMinus" title="出生年份 -1">-
+                            </button>
+                        </div>
+                        <input type="number" class="form-control" id="birthYearInput" step="1" min="1900" max="2100"
+                               placeholder="例如：1998"/>
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary btn-sm" id="btnBirthPlus" title="出生年份 +1">+
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" id="btnBirthConfirm" title="确认当前输入">
+                                确认
+                            </button>
+                        </div>
+                    </div>
+                    <small class="subtle d-block mt-1">
+                        当前：<span id="currentYearLabel"></span> 年，年龄：<span id="currentAgeLabel"></span> 岁
+                    </small>
+                </div>
+
+                <!-- 性别选择（按钮组单选） -->
+                <div>
+                    <label class="form-label-compact d-block">性别</label>
+                    <div class="btn-group btn-radio btn-group-sm" role="group" aria-label="Gender toggle">
+                        <input type="radio" class="btn-check d-none" name="sex" id="sexMale" value="male"
+                               autocomplete="off">
+                        <label class="btn btn-black" for="sexMale">男（75）</label>
+
+                        <input type="radio" class="btn-check d-none" name="sex" id="sexFemale" value="female"
+                               autocomplete="off">
+                        <label class="btn btn-black" for="sexFemale">女（80）</label>
+                    </div>
+                    <small class="subtle d-block mt-1">中国男/女平均寿命约75.37/80.88年</small>
+                    <small class="subtle d-block mt-1"><a
+                            href="https://data.stats.gov.cn/easyquery.htm?cn=C01&zb=A0304&sj=2020" target="_blank">国家数据...</a></small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 左：概要 -->
+        <div class="mb-3 mr-3" style="min-width: 320px;">
+            <div class="summary-card shadow-sm p-3">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="summary-kicker mr-2">🧭 生命概览</div>
+                    <small id="maxAgeLabel" class="text-muted"></small>
+                </div>
+
+                <ul class="list-unstyled mb-2 summary-lines">
+                    <li>出生年份 <span id="birthYearLabel">--</span></li>
+
+                    <li class="metric-line d-flex align-items-center">
+                        <div class="metric-label">
+                            当前年龄 <strong id="ageLabel">--</strong> 岁
+                        </div>
+                        <div class="progress metric-progress mx-2">
+                            <div id="ageProgress" class="progress-bar bg-dark" role="progressbar"
+                                 style="width:0%"></div>
+                        </div>
+                        <small class="subtle metric-tail">
+                            总寿命已使用 <span id="lifeUsedPctLabel">--</span>%
+                            <span id="lifeUsedFracLabel">(<span id="ageUsedFracLabel2">--</span>/<span
+                                    id="maxAgeTailLabel">--</span>)</span>
+                        </small>
+                    </li>
+
+                    <li class="metric-line d-flex align-items-center">
+                        <div class="metric-label">距离死亡 <strong id="lifeLeftLabel">--</strong> 年
+                            (<span id="maxAgeLabelDeath">70</span>-<span id="ageFormulaLabelDeath">--</span>)
+                        </div>
+                    </li>
+
+                    <li class="metric-line d-flex align-items-center">
+                        <div class="metric-label">
+                            距离衰弱期 <strong class="text-danger font-weight-bold" id="toFrailLabel">--</strong> 年
+                            (<span id="frailStartLabel">60</span>-<span id="ageFormulaLabel1">--</span>)
+                        </div>
+                        <div class="progress metric-progress mx-2" title="健康期已使用进度">
+                            <div id="healthyProgress" class="progress-bar bg-danger" role="progressbar"
+                                 style="width:0%"></div>
+                        </div>
+                        <small class="subtle metric-tail">健康期已使用 <span id="healthyUsedPctLabel">--</span>%<span
+                                id="healthyUsedFracLabel"></span></small>
+                    </li>
+
+                    <li class="metric-line d-flex align-items-center">
+                        <div class="metric-label">
+                            距离失能期 <strong class="font-weight-bold" id="toDisabledLabel">--</strong> 年
+                            (<span id="disabledStartLabel">70</span>-<span id="ageFormulaLabel2">--</span>)
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 颜色图例 -->
+    <div class="legend my-3">
+    <span class="legend-item">
+      <span class="legend-box legend-past"></span>
+      <span id="legendPast">已过去</span>
+    </span>
+        <span class="legend-item">
+      <span class="legend-box legend-now"></span>
+      <span id="legendNow">当前月</span>
+    </span>
+        <span class="legend-item">
+      <span class="legend-box legend-healthy"></span>
+      <span id="legendHealthy">健康期(1~59)</span>
+    </span>
+        <span class="legend-item">
+      <span class="legend-box legend-frail"></span>
+      <span id="legendFrail">衰弱期(60~69)</span>
+    </span>
+        <span class="legend-item">
+      <span class="legend-box legend-disabled"></span>
+      <span id="legendDisabled">失能期(70~78)</span>
+    </span>
+    </div>
+
+    <!-- 表格 -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover lifetable">
+            <thead class="thead-dark">
+            <tr>
+                <th class="text-center align-middle" style="width:60px;">阶段</th>
+                <th class="text-center align-middle" style="width:110px;">年份 / 年龄</th>
+                <th class="text-center">1</th>
+                <th class="text-center">2</th>
+                <th class="text-center">3</th>
+                <th class="text-center">4</th>
+                <th class="text-center">5</th>
+                <th class="text-center">6</th>
+                <th class="text-center">7</th>
+                <th class="text-center">8</th>
+                <th class="text-center">9</th>
+                <th class="text-center">10</th>
+                <th class="text-center">11</th>
+                <th class="text-center">12</th>
+            </tr>
+            </thead>
+            <tbody id="lifeTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="bottom-navigation">
+    <a href="index.html">💰 FIRE计算器</a>
+    <a href="life.html">⏰ 生命倒计时</a>
+    <a href="expense.html">🧾 消费盘点</a>
+    <!--<a href="clock.html">⏰ FIRE时钟</a>-->
+    <a href="rental.html">🏠 房产租售比</a>
+</div>
+
+<script>
+    // ====== 常量（阶段边界固定，MAX_AGE 可变）======
+    let MAX_AGE = 78; // 动态：男=75 / 女=80
+    const HEALTHY_END = 59; // 健康期：1–59 岁
+    const FRAIL_END = 69; // 衰弱期：60–69 岁（失能期：70–MAX_AGE）
+
+    // ====== 当前年月（按本地时区）======
+    const now = new Date();
+    const CUR_YEAR = now.getFullYear();
+    const CUR_MONTH = now.getMonth() + 1; // 1..12
+
+    function setLegendBySystemDate(birthYear) {
+        const pad2 = n => String(n).padStart(2, '0');
+        const prevYear = (CUR_MONTH === 1) ? (CUR_YEAR - 1) : CUR_YEAR;
+        const prevMonth = (CUR_MONTH === 1) ? 12 : (CUR_MONTH - 1);
+
+        const startYear = clamp(parseInt(birthYear, 10) || (CUR_YEAR - 35), 1900, 2100);
+        $('#legendPast').text(`已过去(${startYear}~${prevYear}-${pad2(prevMonth)})`);
+        $('#legendNow').text(`当前月(${CUR_YEAR}-${pad2(CUR_MONTH)})`);
+    }
+
+    // ====== DOM ======
+    const $birthInput = $('#birthYearInput');
+    const $tbody = $('#lifeTableBody');
+
+    // ====== 工具函数 ======
+    function clamp(n, min, max) {
+        return Math.min(Math.max(n, min), max);
+    }
+
+    function phaseByAge(age) {
+        if (age <= HEALTHY_END) return 'healthy';
+        if (age <= FRAIL_END) return 'frail';
+        return 'disabled';
+    }
+
+    function phaseLabelByAge(age) {
+        const ph = phaseByAge(age);
+        return ph === 'healthy' ? '健康期' : (ph === 'frail' ? '衰弱期' : '失能期');
+    }
+
+    function monthsClassFor(year, month, age) {
+        const idx = year * 12 + month;
+        const curIdx = CUR_YEAR * 12 + CUR_MONTH;
+        if (idx < curIdx) return 'past';
+        const ph = phaseByAge(age);
+        if (ph === 'healthy') return 'healthy';
+        if (ph === 'frail') return 'frail';
+        return 'disabled';
+    }
+
+    function fmtPct(n) {
+        n = Math.max(0, Math.min(100, n));
+        return n.toFixed(2);
+    }
+
+    function updateHeader(birthYear) {
+        const age = CUR_YEAR - birthYear;
+
+        const lifeLeft = clamp(MAX_AGE - age, 0, MAX_AGE);
+        const agePct = (age <= 0) ? 0 : (age / MAX_AGE) * 100;
+
+        const FRAIL_START = HEALTHY_END + 1; // 60
+        const DISABLED_START = FRAIL_END + 1; // 70
+
+        // 健康期已使用进度：当前年龄 / 60
+        const healthyUsedPct = clamp((age / FRAIL_START) * 100, 0, 100);
+        $('#healthyProgress')
+            .css('width', `${fmtPct(healthyUsedPct)}%`)
+            .attr('aria-valuenow', fmtPct(healthyUsedPct))
+            .attr('title', `健康期已使用 ${fmtPct(healthyUsedPct)}%`);
+
+        $('#healthyUsedPctLabel').text(fmtPct(healthyUsedPct));
+        const healthyNumerator = clamp(age, 0, FRAIL_START);
+        $('#healthyUsedFracLabel').text(`(${healthyNumerator}/${FRAIL_START})`);
+
+        const toFrail = clamp(FRAIL_START - age, 0, MAX_AGE);
+        const toDisabled = clamp(DISABLED_START - age, 0, MAX_AGE);
+
+        $('#birthYearLabel').text(birthYear);
+        $('#ageLabel').text(age);
+        $('#lifeLeftLabel').text(lifeLeft);
+
+        $('#lifeUsedPctLabel').text(fmtPct(agePct));
+        $('#ageUsedFracLabel2').text(age);
+        $('#maxAgeTailLabel').text(MAX_AGE);
+
+        $('#toFrailLabel').text(toFrail);
+        $('#frailStartLabel').text(FRAIL_START);
+        $('#ageFormulaLabel1').text(age);
+        $('#toDisabledLabel').text(toDisabled);
+        $('#disabledStartLabel').text(DISABLED_START);
+        $('#ageFormulaLabel2').text(age);
+
+        //距离死亡...
+        $('#maxAgeLabelDeath').text(MAX_AGE);
+        $('#ageFormulaLabelDeath').text(age);
+
+        // 行内进度条
+        $('#ageProgress').css('width', `${fmtPct(agePct)}%`);
+
+        // 右侧小字提示
+        $('#currentYearLabel').text(CUR_YEAR);
+        $('#currentAgeLabel').text(age);
+    }
+
+    // 行动型悬停提示
+    function tipForPhase(cls) {
+        const tips = {
+            past: '已过去｜可做复盘：哪些值得继续？哪些应当舍弃？',
+            healthy: '健康期｜打基础：阻力训练/心肺/睡眠/体检/戒烟限酒',
+            frail: '衰弱期｜防跌倒与肌少：力量训练、维D/钙、慢病管理',
+            disabled: '失能期｜提前规划照护：无障碍改造、意定监护/授权'
+        };
+        return tips[cls] || '';
+    }
+
+    // 生成整张表
+    function buildTable(birthYear) {
+        $tbody.empty();
+
+        const HEALTH_ROWS = HEALTHY_END;              // 1..59
+        const FRAIL_ROWS = FRAIL_END - HEALTHY_END; // 60..69 -> 10
+        const DISAB_ROWS = MAX_AGE - FRAIL_END;     // 70..MAX_AGE
+
+        for (let age = 1; age <= MAX_AGE; age++) {
+            const year = birthYear + (age - 1);
+            const $tr = $('<tr></tr>');
+
+            // 阶段列（首行插入）
+            if (age === 1) {
+                $tr.append(`<td class="phase-cell align-middle text-center" rowspan="${HEALTH_ROWS}">健康期(1~${HEALTHY_END})</td>`);
+            } else if (age === HEALTHY_END + 1) {
+                $tr.append(`<td class="phase-cell align-middle text-center" rowspan="${FRAIL_ROWS}">衰弱期(${HEALTHY_END + 1}~${FRAIL_END})</td>`);
+            } else if (age === FRAIL_END + 1) {
+                $tr.append(`<td class="phase-cell align-middle text-center" rowspan="${DISAB_ROWS}">失能期(${FRAIL_END + 1}~${MAX_AGE})</td>`);
+            }
+
+            // 年份 / 年龄列
+            $tr.append(`<td class="year-age text-center font-weight-500">${year} / ${age}</td>`);
+
+            // 12 个月
+            for (let m = 1; m <= 12; m++) {
+                const cls = monthsClassFor(year, m, age);
+                const isNow = (year === CUR_YEAR && m === CUR_MONTH);
+                const label = phaseLabelByAge(age);
+                const mm = String(m).padStart(2, '0');
+                const title = isNow
+                    ? `当前月 ${year}-${mm}｜做一件重要的小事`
+                    : `${year}-${mm}｜${label}｜${tipForPhase(cls)}`;
+
+                $tr.append(`<td class="month-cell ${cls} ${isNow ? 'now' : ''}" title="${title}" aria-label="${title}">&nbsp;</td>`);
+            }
+
+            $tbody.append($tr);
+        }
+    }
+
+    // ====== 性别相关 ======
+    function genderFromUI() {
+        const v = $('input[name="sex"]:checked').val();
+        return v === 'female' ? 'female' : 'male';
+    }
+
+    function maxAgeByGender(g) {
+        return g === 'female' ? 80 : 75;
+    }
+
+    function applyMaxAge(newMaxAge, birthYear) {
+        MAX_AGE = newMaxAge;
+        const g = genderFromUI();
+        $('#maxAgeLabel').text(`基于${g === 'female' ? '女' : '男'}性寿命 ${MAX_AGE} 岁`);
+        $('#legendHealthy').text(`健康期(1~${HEALTHY_END})`);
+        $('#legendFrail').text(`衰弱期(${HEALTHY_END + 1}~${FRAIL_END})`);
+        $('#legendDisabled').text(`失能期(${FRAIL_END + 1}~${MAX_AGE})`);
+
+        updateHeader(birthYear);
+        buildTable(birthYear);
+        setLegendBySystemDate(birthYear);
+    }
+
+    function commitGender() {
+        const g = genderFromUI();
+        localStorage.setItem('life_gender', g);
+        const by = parseInt($('#birthYearInput').val(), 10) || (CUR_YEAR - 35);
+        applyMaxAge(maxAgeByGender(g), by);
+
+        // 更新性别按钮的激活态外观
+        $('.btn-radio .btn').removeClass('active btn-primary').addClass('btn-light');
+        if (g === 'female') {
+            $('label[for="sexFemale"]').addClass('active btn-black').removeClass('btn-black');
+        } else {
+            $('label[for="sexMale"]').addClass('active btn-black').removeClass('btn-black');
+        }
+    }
+
+    // —— 出生年份提交 —— //
+    function commitBirthYear(rawVal) {
+        let by = parseInt(rawVal, 10);
+        if (isNaN(by)) by = CUR_YEAR - 35;
+        by = clamp(by, 1900, 2100);
+        $birthInput.val(by);
+        updateHeader(by);
+        buildTable(by);
+        setLegendBySystemDate(by);
+        localStorage.setItem('life_birth_year', by);
+
+        // 依据当前性别应用 MAX_AGE 并刷新
+        const g = genderFromUI();
+        applyMaxAge(maxAgeByGender(g), by);
+    }
+
+    // —— 事件绑定 —— //
+    $('#btnBirthMinus').on('click', function () {
+        const v = parseInt($birthInput.val(), 10) || CUR_YEAR - 35;
+        commitBirthYear(v - 1);
+    });
+    $('#btnBirthPlus').on('click', function () {
+        const v = parseInt($birthInput.val(), 10) || CUR_YEAR - 35;
+        commitBirthYear(v + 1);
+    });
+    $('#btnBirthConfirm').on('click', function () {
+        commitBirthYear($birthInput.val());
+    });
+    $birthInput.on('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            $('#btnBirthConfirm').click();
+        }
+    });
+    $('input[name="sex"]').on('change', function () {
+        commitGender();
+    });
+
+    // ====== 初始渲染 ======
+    (function init() {
+        const savedBirth = parseInt(localStorage.getItem('life_birth_year'), 10);
+        const defaultBirth = !isNaN(savedBirth) ? savedBirth : (CUR_YEAR - 35);
+        $birthInput.val(defaultBirth);
+
+        const savedGender = localStorage.getItem('life_gender') || 'male';
+        if (savedGender === 'female') {
+            $('#sexFemale').prop('checked', true);
+        } else {
+            $('#sexMale').prop('checked', true);
+        }
+
+        // 首次渲染 + 按性别应用 MAX_AGE
+        updateHeader(defaultBirth);
+        buildTable(defaultBirth);
+        setLegendBySystemDate(defaultBirth);
+        applyMaxAge(maxAgeByGender(savedGender), defaultBirth);
+
+        // 初始化性别按钮外观
+        commitGender();
+    })();
+</script>
+</body>
+</html>

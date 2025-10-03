@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
+    <link rel="icon" href="dist/favicon.ico"/>
+    <title>消费盘点</title>
+    <!-- Bootstrap & jQuery（与现页一致的技术栈） -->
+    <link rel="stylesheet" type="text/css" href="dist/css/c070423032508.css">
+    <link rel="stylesheet" type="text/css" href="dist/css/c220423282110.css">
+    <link rel="stylesheet" href="dist/css/bootstrap.min.css">
+    <script src="dist/js/jquery-3.7.0.min.js"></script>
+    <script src="dist/js/bootstrap.min.js"></script>
+    <script src="dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        body {
+            background: #fff;
+            padding-bottom: 60px;
+        }
+
+        .page-title {
+            font-weight: 700;
+            letter-spacing: .5px;
+        }
+
+        .th-info {
+            color: #6c757d;
+            font-weight: 400;
+            font-size: .85rem;
+        }
+
+        .card-soft {
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px solid #e9ecef;
+            border-radius: .75rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, .03);
+        }
+
+        .table thead th {
+            white-space: nowrap;
+            vertical-align: bottom;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #212529;
+            color: #fff;
+            border-color: #212529;
+        }
+
+        .table td, .table th {
+            vertical-align: middle;
+        }
+
+        .num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .muted {
+            color: #6c757d;
+        }
+
+        .tfoot-total td {
+            font-weight: 800;
+            font-size: 1.05rem;
+            background: #fcfcfd;
+            border-top: 2px solid #343a40;
+        }
+
+        .btn-black {
+            background: #000;
+            color: #fff;
+        }
+
+        .btn-black:hover {
+            color: #fff;
+            filter: brightness(1.1);
+        }
+
+        .tag {
+            padding: .2rem .4rem;
+            border-radius: .35rem;
+            background: #f1f3f5;
+            font-size: .8rem;
+        }
+
+        .table-responsive {
+            width: 100%;
+        }
+
+        .table {
+            width: 100%;
+        }
+
+        .bottom-navigation {
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid py-4 px-3">
+    <div class="d-flex align-items-center mb-3">
+        <h2 class="page-title mb-0">🧾 消费盘点</h2>
+        <div class="ml-3 tag">日均 / 月均 / 年均 / 30年 / <span id="yearsLabel">43</span>年</div>
+    </div>
+
+    <!-- 控件区 -->
+    <div class="card-soft p-3 mb-3">
+        <div class="d-flex flex-wrap align-items-center">
+            <div class="mr-2 mb-2">
+                <button id="addRow" class="btn btn-outline-secondary">＋ 添加一行</button>
+            </div>
+            <div class="mr-2 mb-2">
+                <button id="restoreTemplate" class="btn btn-outline-secondary">↺ 恢复示例模板</button>
+            </div>
+            <div class="mr-2 mb-2">
+                <button id="clearAll" class="btn btn-outline-secondary">🗑 清空全部</button>
+            </div>
+
+            <!-- 导入/导出 -->
+            <div class="mr-2 mb-2">
+                <button id="importCSV" class="btn btn-outline-primary">⤒ 导入 CSV</button>
+                <input id="importFile" type="file" accept=".csv,text/csv" class="d-none"/>
+            </div>
+            <div class="mr-2 mb-2">
+                <button id="exportCSV" class="btn btn-black">⤓ 导出 CSV</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 表格 -->
+    <div class="table-responsive">
+        <table id="expenseTable" class="table table-hover table-bordered mb-0">
+            <thead class="thead-dark">
+            <tr>
+                <th style="min-width:110px;">类目</th>
+                <th style="min-width:180px;">项目</th>
+                <th style="min-width:110px;">周期</th>
+                <th class="num" style="min-width:120px;">支出(¥)</th>
+                <th class="num" style="min-width:120px;">日均(¥)</th>
+                <th class="num" style="min-width:120px;">月均(¥)</th>
+                <th class="num" style="min-width:120px;">年均(¥)</th>
+                <th class="num" style="min-width:130px;">30年(¥)</th>
+                <th class="num" style="min-width:130px;">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <select id="yearsSelect" class="custom-select custom-select-sm w-auto"></select>
+                        <span class="ml-1">(¥)</span>
+                    </div>
+                </th>
+                <th class="text-center" style="min-width:90px;">操作</th>
+            </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+            <tfoot>
+            <tr class="tfoot-total">
+                <td colspan="3" class="text-right">合计</td>
+                <td class="num" id="sumD">0.00</td>
+                <td class="num" id="sumE">0.00</td>
+                <td class="num" id="sumF">0.00</td>
+                <td class="num" id="sumG">0.00</td>
+                <td class="num" id="sumH">0.00</td>
+                <td class="num" id="sumI">0.00</td>
+                <td></td>
+            </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="small text-muted mt-2">
+        周期天数映射：每天=1， 每周=7， 每月=30， 每年=365，
+        每2年=730...
+    </div>
+</div>
+
+<div class="bottom-navigation">
+    <a href="index.html">💰 FIRE计算器</a>
+    <a href="life.html">⏰ 生命倒计时</a>
+    <a href="expense.html">🧾 消费盘点</a>
+    <!--<a href="clock.html">⏰ FIRE时钟</a>-->
+    <a href="rental.html">🏠 房产租售比</a>
+</div>
+
+<script>
+    /* ===== 配置 ===== */
+    // 扩展周期可选项：新增 每6年~每10年
+    const PERIOD_OPTIONS = [
+        "每天", "每周", "每月", "每年",
+        "每2年", "每3年", "每4年", "每5年",
+        "每6年", "每7年", "每8年", "每9年", "每10年"
+    ];
+    const PERIOD_TO_DAYS = {
+        "每天": 1, "每周": 7, "每月": 30, "每年": 365,
+        "每2年": 2 * 365, "每3年": 3 * 365, "每4年": 4 * 365, "每5年": 5 * 365,
+        "每6年": 6 * 365, "每7年": 7 * 365, "每8年": 8 * 365, "每9年": 9 * 365, "每10年": 10 * 365
+    };
+    const CATEGORY_OPTIONS = ["饮食", "娱乐", "电子", "生活", "家电", "交通", "旅游", "其它"];
+
+    const YEARS_DEFAULT = 43;
+    const LS_KEY = 'expense_rows_v1';
+    const LS_YEARS_KEY = 'expense_years_v1';
+    let selectedYears = YEARS_DEFAULT;
+
+    /* 示例模板（保持不变，可自由编辑） */
+    const TEMPLATE_ROWS = [
+        {cat: "饮食", name: "早餐", period: "每天", amount: 3},
+        {cat: "饮食", name: "中饭（自己做）", period: "每天", amount: 15},
+        {cat: "饮食", name: "晚饭（鸡蛋+牛奶+玉米等）", period: "每天", amount: 7},
+        {cat: "饮食", name: "水果", period: "每天", amount: 6},
+        {cat: "饮食", name: "吃大餐（每月2~3次）", period: "每月", amount: 200},
+        {cat: "娱乐", name: "电影票（每月2~3张）", period: "每月", amount: 200},
+        {cat: "电子", name: "手机", period: "每3年", amount: 3000},
+        {cat: "电子", name: "电脑（含显卡）", period: "每4年", amount: 8000},
+        {cat: "电子", name: "外设（显示器/音箱）", period: "每4年", amount: 5000},
+        {cat: "生活", name: "话费+网费（电信1000M）", period: "每月", amount: 199},
+        {cat: "生活", name: "运动器械（损坏闲鱼购入2~3次）", period: "每年", amount: 1000},
+        {cat: "生活", name: "水电燃气", period: "每年", amount: 3000},
+        {cat: "生活", name: "物业费（含墙体管道的损耗维护费）", period: "每年", amount: 1500},
+        {cat: "家电", name: "冰箱", period: "每5年", amount: 1500},
+        {cat: "家电", name: "洗衣机", period: "每5年", amount: 2000},
+        {cat: "家电", name: "烘干机", period: "每5年", amount: 2000},
+        {cat: "家电", name: "空调", period: "每5年", amount: 2000},
+        {cat: "交通", name: "交通费（市域地铁）", period: "每月", amount: 40},
+        {cat: "交通", name: "交通费（城际高铁）", period: "每年", amount: 1000},
+        {cat: "交通", name: "交通费（小电驴含充电）", period: "每3年", amount: 3000},
+        {cat: "旅游", name: "", period: "每年", amount: 0},
+        {cat: "其它", name: "衣物/日用/医疗/人情/学习…", period: "每年", amount: 1000}
+    ];
+
+    /* ===== 工具函数 ===== */
+    const fmt = n => Number(n || 0).toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    // 新增：用于“合计行”的纯数字格式（去掉千分位）
+    const fmtPlain = n => (Number(n || 0)).toFixed(2);
+
+    const parseNum = v => isNaN(parseFloat(v)) ? 0 : parseFloat(v);
+
+    function calcByDays(amount, days) {
+        if (!days) return {E: 0, F: 0, G: 0, H: 0, I: 0};
+        const E = amount / days;   // 日均
+        const F = E * 30;          // 月均
+        const G = E * 365;         // 年均
+        const H = G * 30;          // 30年
+        const I = G * selectedYears; // N年（下拉可选）
+        return {E, F, G, H, I};
+    }
+
+    function buildSelect(options, selected) {
+        const $sel = $('<select class="form-control form-control-sm"></select>');
+        options.forEach(opt => {
+            $sel.append(`<option ${opt === selected ? 'selected' : ''}>${opt}</option>`);
+        });
+        return $sel;
+    }
+
+    function buildRow(data = {cat: "其它", name: "", period: "每月", amount: 0}) {
+        const $tr = $('<tr></tr>');
+        const $cat = buildSelect(CATEGORY_OPTIONS, data.cat).addClass('input-cat');
+        const $name = $(`<input type="text" class="form-control form-control-sm input-name" placeholder="">`).val(data.name);
+        const $period = buildSelect(PERIOD_OPTIONS, data.period).addClass('select-period');
+        const $amount = $(`<input type="number" class="form-control form-control-sm input-amount num" step="0.01" min="0">`).val(data.amount);
+
+        const $tdCat = $('<td></td>').append($cat);
+        const $tdName = $('<td></td>').append($name);
+        const $tdPer = $('<td></td>').append($period);
+        const $tdAmt = $('<td class="num"></td>').append($amount);
+        const $tdE = $('<td class="num cell-daily">0.00</td>');
+        const $tdF = $('<td class="num cell-monthly">0.00</td>');
+        const $tdG = $('<td class="num cell-yearly">0.00</td>');
+        const $tdH = $('<td class="num cell-30y">0.00</td>');
+        const $tdI = $('<td class="num cell-43y">0.00</td>');
+        const $tdOps = $('<td class="text-center"></td>').append('<button class="btn btn-sm btn-outline-danger btn-del">删除</button>');
+
+        $tr.append($tdCat, $tdName, $tdPer, $tdAmt, $tdE, $tdF, $tdG, $tdH, $tdI, $tdOps);
+
+        // 事件
+        $tr.on('input change', '.input-amount, .select-period, .input-name, .input-cat', () => {
+            computeRow($tr);
+            computeTotals();
+            saveToLocalStorage();
+        });
+        $tr.on('click', '.btn-del', () => {
+            $tr.remove();
+            computeTotals();
+            saveToLocalStorage();
+        });
+
+        computeRow($tr);
+        return $tr;
+    }
+
+    function computeRow($tr) {
+        const amount = parseNum($tr.find('.input-amount').val());
+        const period = $tr.find('.select-period').val();
+        const days = PERIOD_TO_DAYS[period] || 0;
+        const {E, F, G, H, I} = calcByDays(amount, days);
+        $tr.find('.cell-daily').text(fmt(E));
+        $tr.find('.cell-monthly').text(fmt(F));
+        $tr.find('.cell-yearly').text(fmt(G));
+        $tr.find('.cell-30y').text(fmt(H));
+        $tr.find('.cell-43y').text(fmt(I));
+    }
+
+    function computeTotals() {
+        let sumD = 0, sumE = 0, sumF = 0, sumG = 0, sumH = 0, sumI = 0;
+        $('#tbody tr').each(function () {
+            const $tr = $(this);
+            const amount = parseNum($tr.find('.input-amount').val());
+            const e = parseNum($tr.find('.cell-daily').text().replace(/,/g, ''));
+            const f = parseNum($tr.find('.cell-monthly').text().replace(/,/g, ''));
+            const g = parseNum($tr.find('.cell-yearly').text().replace(/,/g, ''));
+            const h = parseNum($tr.find('.cell-30y').text().replace(/,/g, ''));
+            const i = parseNum($tr.find('.cell-43y').text().replace(/,/g, ''));
+            sumD += amount;
+            sumE += e;
+            sumF += f;
+            sumG += g;
+            sumH += h;
+            sumI += i;
+        });
+        // 合计行改为“原始数字”（无千分位），保留两位小数
+        $('#sumD').text(fmtPlain(sumD));
+        $('#sumE').text(fmtPlain(sumE));
+        $('#sumF').text(fmtPlain(sumF));
+        $('#sumG').text(fmtPlain(sumG));
+        $('#sumH').text(fmtPlain(sumH));
+        $('#sumI').text(fmtPlain(sumI));
+    }
+
+    function recomputeAll() {
+        $('#tbody tr').each(function () {
+            computeRow($(this));
+        });
+        computeTotals();
+    }
+
+    /* ===== LocalStorage（行数据） ===== */
+    function saveToLocalStorage() {
+        const rows = [];
+        $('#tbody tr').each(function () {
+            rows.push({
+                cat: $(this).find('.input-cat').val(),
+                name: $(this).find('.input-name').val(),
+                period: $(this).find('.select-period').val(),
+                amount: parseNum($(this).find('.input-amount').val())
+            });
+        });
+        localStorage.setItem(LS_KEY, JSON.stringify(rows));
+    }
+
+    function loadFromLocalStorage() {
+        try {
+            const json = localStorage.getItem(LS_KEY);
+            if (!json) return null;
+            const rows = JSON.parse(json);
+            if (!Array.isArray(rows)) return null;
+            return rows;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function clearLocal() {
+        localStorage.removeItem(LS_KEY);
+    }
+
+    /* ===== LocalStorage（年数） ===== */
+    function saveYearsToLocalStorage() {
+        localStorage.setItem(LS_YEARS_KEY, String(selectedYears));
+    }
+
+    function loadYearsFromLocalStorage() {
+        const v = localStorage.getItem(LS_YEARS_KEY);
+        if (!v) return YEARS_DEFAULT;
+        const n = parseInt(v, 10);
+        return (Number.isFinite(n) && n >= 1 && n <= 100) ? n : YEARS_DEFAULT;
+    }
+
+    /* ===== 年数下拉初始化 ===== */
+    function initYearsSelect() {
+        const $sel = $('#yearsSelect');
+        $sel.empty();
+        for (let i = 1; i <= 100; i++) $sel.append(`<option value="${i}">${i}</option>`);
+        selectedYears = loadYearsFromLocalStorage();
+        $sel.val(String(selectedYears));
+        updateYearsUI();
+
+        $sel.on('change', () => {
+            selectedYears = parseInt($sel.val(), 10) || YEARS_DEFAULT;
+            saveYearsToLocalStorage();
+            updateYearsUI();
+            recomputeAll();
+        });
+    }
+
+    function updateYearsUI() {
+        $('#yearsLabel').text(String(selectedYears));
+    }
+
+    /* ===== CSV 导入/导出 ===== */
+    function parseCSVLine(line) {
+        const out = [];
+        let cur = '', inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i], next = line[i + 1];
+            if (inQuotes) {
+                if (ch === '"' && next === '"') {
+                    cur += '"';
+                    i++;
+                } else if (ch === '"') {
+                    inQuotes = false;
+                } else {
+                    cur += ch;
+                }
+            } else {
+                if (ch === '"') {
+                    inQuotes = true;
+                } else if (ch === ',') {
+                    out.push(cur);
+                    cur = '';
+                } else {
+                    cur += ch;
+                }
+            }
+        }
+        out.push(cur);
+        return out;
+    }
+
+    function exportCSV() {
+        const header = ["类目", "项目", "周期", "支出(¥)", "日均(¥)", "月均(¥)", "年均(¥)", "30年(¥)", `${selectedYears}年(¥)`];
+        const lines = [header.join(',')];
+        $('#tbody tr').each(function () {
+            const tds = $(this).find('td');
+            const row = [
+                $(tds[0]).find('select').val(),
+                (($(tds[1]).find('input').val() || '').replace(/,/g, ' ')),
+                $(tds[2]).find('select').val(),
+                parseNum($(tds[3]).find('input').val()),
+                $(tds[4]).text().replace(/,/g, ''),
+                $(tds[5]).text().replace(/,/g, ''),
+                $(tds[6]).text().replace(/,/g, ''),
+                $(tds[7]).text().replace(/,/g, ''),
+                $(tds[8]).text().replace(/,/g, '')
+            ];
+            lines.push(row.join(','));
+        });
+        const sum = ["合计", "", "",
+            $('#sumD').text().replace(/,/g, ''),
+            $('#sumE').text().replace(/,/g, ''),
+            $('#sumF').text().replace(/,/g, ''),
+            $('#sumG').text().replace(/,/g, ''),
+            $('#sumH').text().replace(/,/g, ''),
+            $('#sumI').text().replace(/,/g, '')];
+        lines.push(sum.join(','));
+
+        const blob = new Blob(['\ufeff' + lines.join('\n')], {type: 'text/csv;charset=utf-8;'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = '消费盘点.csv';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+
+    function importCSVFromText(text) {
+        if (!text) return;
+        if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+        const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+        if (lines.length < 2) {
+            alert('CSV 内容为空或格式不正确');
+            return;
+        }
+
+        const header = parseCSVLine(lines[0]);
+        let importedYears = selectedYears;
+        const lastHeader = header[header.length - 1] || '';
+        const yearsMatch = lastHeader.match(/(\d+)\s*年/);
+        if (yearsMatch) {
+            const y = parseInt(yearsMatch[1], 10);
+            if (Number.isFinite(y) && y >= 1 && y <= 100) importedYears = y;
+        }
+        if (header.length < 9) {
+            alert('CSV 列数不足，无法导入');
+            return;
+        }
+
+        const rows = [];
+        for (let i = 1; i < lines.length; i++) {
+            const arr = parseCSVLine(lines[i]);
+            if (!arr.length) continue;
+            if ((arr[0] || '').trim() === '合计') break;
+
+            const cat = (arr[0] || '其它').trim() || '其它';
+            const name = (arr[1] || '').trim();
+            const period = (arr[2] || '每月').trim();
+            const amount = parseNum(arr[3]);
+
+            rows.push({cat, name, period, amount});
+        }
+        if (!rows.length) {
+            alert('未解析到有效数据行');
+            return;
+        }
+
+        selectedYears = importedYears;
+        $('#yearsSelect').val(String(selectedYears));
+        updateYearsUI();
+        saveYearsToLocalStorage();
+
+        mountRows(rows);
+        saveToLocalStorage();
+    }
+
+    function bindImport() {
+        const fileInput = document.getElementById('importFile');
+        document.getElementById('importCSV').addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files && fileInput.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    importCSVFromText(String(e.target.result || ''));
+                } catch (err) {
+                    console.error(err);
+                    alert('导入失败：文件解析错误');
+                } finally {
+                    fileInput.value = '';
+                }
+            };
+            reader.onerror = () => {
+                alert('读取文件失败');
+                fileInput.value = '';
+            };
+            reader.readAsText(file, 'utf-8');
+        });
+    }
+
+    /* ===== 初始化 ===== */
+    function addRow(data) {
+        $('#tbody').append(buildRow(data));
+    }
+
+    function mountRows(rows) {
+        $('#tbody').empty();
+        rows.forEach(r => addRow(r));
+        computeTotals();
+    }
+
+    $(function () {
+        // 初始化“年数”选择 & 导入绑定
+        initYearsSelect();
+        bindImport();
+
+        // 载入本地或模板
+        const saved = loadFromLocalStorage();
+        mountRows(saved && saved.length ? saved : TEMPLATE_ROWS);
+
+        // 绑定按钮
+        $('#addRow').on('click', () => {
+            addRow({cat: "其它", name: "", period: "每月", amount: 0});
+            saveToLocalStorage();
+        });
+        $('#restoreTemplate').on('click', () => {
+            mountRows(TEMPLATE_ROWS);
+            clearLocal();
+            saveToLocalStorage();
+        });
+        $('#clearAll').on('click', () => {
+            $('#tbody').empty();
+            computeTotals();
+            clearLocal();
+        });
+        $('#exportCSV').on('click', exportCSV);
+    });
+</script>
+</body>
+</html>

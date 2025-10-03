@@ -1,0 +1,17 @@
+.bottom-navigation {
+    background-color: #333; /* 底部导航栏背景颜色 */
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    height: 60px;
+}
+
+.bottom-navigation a {
+    text-decoration: none;
+    color: #fff; /* 链接文字颜色 */
+    font-size: 18px;
+}
+
+.bottom-navigation a:hover {
+    color: #ffcc00; /* 鼠标悬停时的文字颜色 */
+}

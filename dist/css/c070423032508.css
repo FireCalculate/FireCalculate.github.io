@@ -1,0 +1,213 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+label {
+    font-weight: bold;
+}
+
+.negative {
+    background-color: #c2c2c2;
+}
+
+.th-info {
+    font-size: 60%;
+    font-weight: 100;
+}
+
+.liveYear {
+    color: rgba(214, 39, 40, 1);
+}
+
+#monthlyExpensesDisplay,
+#principalDisplay {
+    font-size: 80%;
+    color: gray;
+}
+
+.floating-text {
+    position: absolute;
+    top: 33px;
+    right: 10px;
+    background-color: rgba(255, 255, 255, 0.6);
+    padding: 5px 10px;
+    border-radius: 5px;
+    pointer-events: none;
+    z-index: 100;
+    font-size: 75%;
+    color: #555555;
+    font-weight: 100;
+    width: 200px;
+}
+
+.interest-cell, .interest-color {
+    color: rgba(31, 119, 180, 1);
+}
+
+.annual-expenses-cell, .expenses-color {
+    color: rgba(44, 160, 44, 1);
+}
+
+.principal-cell, .principal-color {
+    color: rgba(214, 39, 40, 1);
+}
+
+.alert-info {
+    font-size: 80%;
+}
+
+.bg-liability {
+    background-color: rgba(236, 236, 236, 0.85);
+    animation: fadeInBackground 1s ease-in-out;
+}
+
+@keyframes fadeInBackground {
+    from {
+        background-color: transparent;
+    }
+    to {
+        background-color: rgba(236, 236, 236, 0.85);
+    }
+}
+
+.btn-black {
+    color: #fff;
+    background-color: #333;
+    border-color: #333;
+}
+
+.btn-black:hover {
+    color: #fff;
+    background-color: #000;
+    border-color: #000;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.subscript {
+    color: #888888;
+}
+
+#startYear {
+    color: #888888;
+    max-width: 70px;
+}
+
+.detailed-calculation {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
+    height: 0;
+    overflow: hidden;
+    transition: height 0.3s ease-in-out;
+    font-size: 80%;
+    color: #555555;
+}
+
+
+/*alert*/
+
+
+.douban-d {
+    color: #2e963d;
+    letter-spacing: -0.1em;
+}
+
+.douban-o {
+    color: #2396cd;
+    letter-spacing: -0.1em;
+}
+
+.douban-u {
+    color: #f7c58e;
+    letter-spacing: -0.1em;
+}
+
+.douban-b {
+    color: #2e963d;
+    letter-spacing: -0.1em;
+}
+
+.douban-a {
+    color: #2396cd;
+    letter-spacing: -0.1em;
+}
+
+.douban-n {
+    color: #f7c58e;
+    letter-spacing: -0.1em;
+}
+
+.bg-fbfbfa {
+    background-color: #fbfbfa;
+}
+
+.hidden {
+    display: none;
+}
+
+.align-top {
+    vertical-align: top !important;
+}
+
+.btn-extra-expense {
+    color: rgba(44, 160, 44, 1);
+    background-color: transparent;
+    border: 1px solid rgba(44, 160, 44, 1);
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.btn-extra-expense:hover {
+    background-color: rgba(44, 160, 44, 0.1);
+    color: rgba(44, 160, 44, 0.8);
+}
+
+.btn-extra-expense:active {
+    background-color: rgba(44, 160, 44, 0.2);
+    color: rgba(44, 160, 44, 1);
+    border-color: rgba(44, 160, 44, 1);
+}
+
+.btn-extra-income {
+    color: rgba(31, 119, 180, 1);
+    background-color: transparent;
+    border: 1px solid rgba(31, 119, 180, 1);
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.btn-extra-income:hover {
+    background-color: rgba(31, 119, 180, 0.1);
+    color: rgba(31, 119, 180, 0.8);
+}
+
+.btn-extra-income:active {
+    background-color: rgba(31, 119, 180, 0.2);
+    color: rgba(31, 119, 180, 1);
+    border-color: rgba(31, 119, 180, 1);
+}
+
+.collapse-button {
+    color: #212529;
+    background-color: transparent;
+    border: none;
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+    cursor: pointer;
+    font-size: 18px;
+}
+.collapse-button:hover {
+    background-color: #dee2e6;
+    color: #495057;
+}
+.collapse-button:active {
+    background-color: #dee2e6;
+    color: #343a40;
+    border-color: #adb5bd;
+}
+.alert-link-life{
+    color: #888888;
+}

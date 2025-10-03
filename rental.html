@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
+    <link rel="icon" href="dist/favicon.ico"/>
+    <title>房产租售比计算器</title>
+    <link rel="stylesheet" href="dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="dist/css/271524252010.css">
+    <link rel="stylesheet" href="dist/css/c220423282110.css">
+</head>
+
+<body>
+<div class="container mt-5">
+    <h2 class="text-center">房产租售比计算器</h2>
+    <form id="calculator-form">
+        <div class="row mb-4">
+            <div class="col-sm-3">
+                <label for="unitPrice" class="form-label">单价(￥)</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="unitPrice" placeholder="请输入单价" value="12000">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary btn-md" type="button" onclick="decrementUnitPrice()">-</button>
+                        <button class="btn btn-outline-secondary btn-md" type="button" onclick="incrementUnitPrice()">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-2">
+                <label for="area" class="form-label">面积(㎡)</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="area" placeholder="请输入面积" value="90">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary btn-md" type="button" onclick="decrementArea()">-</button>
+                        <button class="btn btn-outline-secondary btn-md" type="button" onclick="incrementArea()">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-2">
+                <label for="interest" class="form-label">利息(￥)</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="interest" placeholder="请输入利息" value="0">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary btn-md" type="button" onclick="decrementInterest()">-</button>
+                        <button class="btn btn-outline-secondary btn-md" type="button" onclick="incrementInterest()">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-3">
+                <label for="totalPrice" class="form-label">总价<span class="th-info">(单价×面积+利息)</span></label>
+                <input type="number" class="form-control" id="totalPrice" placeholder="总价" readonly>
+            </div>
+
+            <div class="col-sm-2">
+                <label for="rent" class="form-label">月租(￥)</label>
+                <div class="input-group">
+                    <input type="number" step="100" class="form-control" id="rent" placeholder="请输入月租" value="2500">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary btn-md" type="button" onclick="decrementRent()">-</button>
+                        <button class="btn btn-outline-secondary btn-md" type="button" onclick="incrementRent()">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <table class="result-table table table-bordered table-hover">
+            <thead class="thead-dark">
+            <tr>
+                <th>计算方式</th>
+                <th>月租(￥)</th>
+                <th>年租<br><span class="th-info">(月租×12)</span></th>
+                <th>租金回报率<br><span class="th-info">(年租÷总价)</span></th>
+                <th>租售比↓<br><span class="th-info">(总价÷月租)</span></th>
+                <th>年租售比<br><span class="th-info">(总价÷年租)</span></th>
+            </tr>
+            </thead>
+            <tbody id="result-body">
+            <!-- Calculation results will be displayed here -->
+            </tbody>
+        </table>
+    </form>
+</div>
+<div class="alert alert-info bg-fbfbfa border-0 rounded-0" role="alert">
+    <div class="d-flex align-items-center">
+        <div class="flex-grow-1">
+            <p class="mb-2">
+                📌<a href="https://baike.baidu.com/item/%E7%A7%9F%E5%94%AE%E6%AF%94" target="_blank">租售比</a>是指房子的价格与每月租金之间的比值，它用来衡量买房和租房的划算程度。简单来说就是：房价相当于多少个月的租金。
+            </p>
+        </div>
+    </div>
+</div>
+<div class="bottom-navigation">
+    <a href="index.html">💰 FIRE计算器</a>
+    <a href="life.html">⏰ 生命倒计时</a>
+    <a href="expense.html">🧾 消费盘点</a>
+    <!--<a href="clock.html">⏰ FIRE时钟</a>-->
+    <a href="rental.html">🏠 房产租售比</a>
+</div>
+<script src="dist/js/jquery-3.7.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        calculate(false);
+        $('#unitPrice, #area, #interest, #rent').on('input', function () {
+            calculate(false);
+        });
+    });
+
+    function calculate(check) {
+        var unitPrice = parseFloat($('#unitPrice').val()) || 0;
+        var area = parseFloat($('#area').val()) || 0;
+        var interest = parseFloat($('#interest').val()) || 0;
+        var rent = parseFloat($('#rent').val()) || 0;
+
+        if (check && (isNaN(unitPrice) || isNaN(area) || isNaN(interest) || isNaN(rent))) {
+            alert("请输入所有字段");
+            return;
+        }
+
+        // 计算总价
+        var totalPrice = (unitPrice * area) + interest;
+        $('#totalPrice').val(totalPrice.toFixed(2));
+
+        // 创建结果数组并保存初始样式状态
+        var results = [
+            { name: '按当前月租计算', monthRent: rent, yearRent: rent * 12, saleRentRatio: totalPrice / rent, calcType: null, isFirst: true }
+        ];
+
+        for (var i = 200; i <= 900; i += 100) {
+            results.push({
+                name: `按${i}租售比`,
+                monthRent: totalPrice / i,
+                yearRent: (totalPrice / i) * 12,
+                saleRentRatio: i,
+                calcType: i,
+                isFirst: false
+            });
+        }
+
+        // 按照租售比从小到大排序
+        results.sort((a, b) => a.saleRentRatio - b.saleRentRatio);
+
+        // 生成结果行
+        var resultBody = results.map((result, index) => {
+            var rentReturnRate = (result.yearRent / totalPrice) * 100;
+            var saleRentRatioYear = result.calcType ? (result.saleRentRatio / 12).toFixed(2) : (totalPrice / result.yearRent).toFixed(2);
+            // 设置样式：根据初始样式状态进行判断
+            var firstRowSecondColClass = result.isFirst ? 'bg-secondary text-white' : '';
+            var otherRowsFifthColClass = !result.isFirst ? 'bg-secondary text-white' : '';
+            var firstRowFifthColBoldClass = result.isFirst ? 'font-weight-bold' : '';
+            var otherRowsSecondColBoldClass = !result.isFirst ? 'font-weight-bold' : '';
+            return `
+        <tr>
+            <td>${result.name}</td>
+            <td class="${firstRowSecondColClass} ${otherRowsSecondColBoldClass}">${result.monthRent.toFixed(2)}</td>
+            <td>${result.yearRent.toFixed(2)}</td>
+            <td>${rentReturnRate.toFixed(2)}%</td>
+            <td class="${otherRowsFifthColClass} ${firstRowFifthColBoldClass}">${result.saleRentRatio.toFixed(2)}</td>
+            <td>${saleRentRatioYear}</td>
+        </tr>
+        `;
+        }).join('');
+        $('#result-body').html(resultBody);
+    }
+
+    function incrementRent() {
+        let rent = parseFloat($('#rent').val());
+        $('#rent').val((rent + 100));
+        calculate(false);
+    }
+
+    function decrementRent() {
+        let rent = parseFloat($('#rent').val());
+        $('#rent').val((rent - 100));
+        calculate(false);
+    }
+
+    function incrementUnitPrice() {
+        let unitPrice = parseFloat($('#unitPrice').val());
+        $('#unitPrice').val((unitPrice + 1000));
+        calculate(false);
+    }
+
+    function decrementUnitPrice() {
+        let unitPrice = parseFloat($('#unitPrice').val());
+        $('#unitPrice').val((unitPrice - 1000));
+        calculate(false);
+    }
+
+    function incrementArea() {
+        let area = parseFloat($('#area').val());
+        $('#area').val((area + 1));
+        calculate(false);
+    }
+
+    function decrementArea() {
+        let area = parseFloat($('#area').val());
+        $('#area').val((area - 1));
+        calculate(false);
+    }
+
+    function incrementInterest() {
+        let interest = parseFloat($('#interest').val());
+        $('#interest').val((interest + 1000)); // 每次增加 1000
+        calculate(false);
+    }
+
+    function decrementInterest() {
+        let interest = parseFloat($('#interest').val());
+        $('#interest').val((interest - 1000)); // 每次减少 1000
+        calculate(false);
+    }
+</script>
+
+</body>
+
+</html>
