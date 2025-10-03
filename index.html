@@ -282,8 +282,8 @@
             annualExpensesCell.classList.add("annual-expenses-cell", "text-center");
             interestCell.classList.add("interest-cell", "text-center");
             principalCell.classList.add("principal-cell", "text-center");
-            let aaa = `<br><a href='https://data.stats.gov.cn/easyquery.htm?cn=C01&zb=A0304&sj=2020' target='_blank' class='alert-link-life'>(男性寿命约75.37岁)</a>`;
-            let bbb = `<br><a href='https://data.stats.gov.cn/easyquery.htm?cn=C01&zb=A0304&sj=2020' target='_blank' class='alert-link-life'>(女性寿命约80.88岁)</a>`;
+            let aaa = `<br><a href='life.html' target='_blank' class='alert-link-life'>(男性寿命约75.37岁)</a>`;
+            let bbb = `<br><a href='life.html' target='_blank' class='alert-link-life'>(女性寿命约80.88岁)</a>`;
             year.innerHTML = yearCount + "<sub class='subscript'>" + (isNaN(currentYear) ? "" : " " + currentYear + (currentYear === 75 ? aaa : (currentYear === 80 ? bbb : ""))) + "</sub>";
             innerHTMLExpense(annualExpensesCell, annualExpenses, additionalExpenses, principal);
             innerHTMLIncome(interestCell, annualInterest, additionalIncome);
