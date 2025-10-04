@@ -265,6 +265,8 @@
         annualExpenses *= -1;
 
         let currentYear = startYear;
+        const maleLifeExpectancyNote = `<br><a href='life.html' target='_blank' class='alert-link-life'>(男性寿命约75.37岁)</a>`;
+        const femaleLifeExpectancyNote = `<br><a href='life.html' target='_blank' class='alert-link-life'>(女性寿命约80.88岁)</a>`;
         while (maxIterations > 0) {
             annualExpenses = (1 + (inflationRate / 100)) * annualExpenses;
 
@@ -288,9 +290,12 @@
             annualExpensesCell.classList.add("annual-expenses-cell", "text-center");
             interestCell.classList.add("interest-cell", "text-center");
             principalCell.classList.add("principal-cell", "text-center");
-            let aaa = `<br><a href='life.html' target='_blank' class='alert-link-life'>(男性寿命约75.37岁)</a>`;
-            let bbb = `<br><a href='life.html' target='_blank' class='alert-link-life'>(女性寿命约80.88岁)</a>`;
-            year.innerHTML = yearCount + "<sub class='subscript'>" + (isNaN(currentYear) ? "" : " " + currentYear + (currentYear === 75 ? aaa : (currentYear === 80 ? bbb : ""))) + "</sub>";
+            const yearLabel =
+                isNaN(currentYear)
+                    ? "" : " "
+                    + (currentYear === 60 || currentYear === 75 || currentYear === 80 ? `<strong>${currentYear}</strong>` : currentYear) // 2) 60 加粗
+                    + (currentYear === 75 ? maleLifeExpectancyNote : (currentYear === 80 ? femaleLifeExpectancyNote : ""));
+            year.innerHTML = `${yearCount}<sub class='subscript'>${yearLabel}</sub>`;
             innerHTMLExpense(annualExpensesCell, annualExpenses, additionalExpenses, principal);
             innerHTMLIncome(interestCell, annualInterest, additionalIncome);
             principalCell.innerHTML = principal.toFixed(2);
