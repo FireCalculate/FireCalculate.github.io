@@ -711,7 +711,7 @@
         updateHeader(birthYear);
         buildTable(birthYear);
         setLegendBySystemDate(birthYear);
-        drawLifeRing(birthYear); // <<< 新增：同步重绘圆环
+        drawLifeRing(birthYear); // <<< 重绘圆环
     }
 
     function commitGender() {
@@ -729,17 +729,31 @@
         }
     }
 
-    function commitBirthYear(rawVal) {
-        let by = parseInt(rawVal, 10);
+    /**
+     * 提交出生年份：
+     *  - preserveTyping: true 时，不回写输入框（避免打字中被“1900/2100”覆盖）
+     *  - noStore: true 时，不写 localStorage（实时输入过程减少无意义写入）
+     *  - live: true 时，仅当输入满4位数字才触发计算（避免输入1/19/199时反复跳到1900）
+     */
+    function commitBirthYear(rawVal, opts = {}) {
+        const {preserveTyping = false, noStore = false, live = false} = opts;
+        const s = String(rawVal ?? '').trim();
+
+        if (live) {
+            // 仅当是 1~4 位数字时继续；未满4位先不触发渲染（“实时直接触发”针对有效年份）
+            if (!/^\d{1,4}$/.test(s)) return;
+            if (s.length < 4) return;
+        }
+
+        let by = parseInt(s, 10);
         if (isNaN(by)) by = CUR_YEAR - 35;
         by = clamp(by, 1900, 2100);
-        $birthInput.val(by);
-        updateHeader(by);
-        buildTable(by);
-        setLegendBySystemDate(by);
-        localStorage.setItem('life_birth_year', by);
+
+        if (!preserveTyping) $birthInput.val(by);
+        if (!noStore) localStorage.setItem('life_birth_year', by);
+
         const g = genderFromUI();
-        applyMaxAge(maxAgeByGender(g), by); // 内部会重绘圆环
+        applyMaxAge(maxAgeByGender(g), by);
     }
 
     // —— 事件绑定 —— //
@@ -754,17 +768,25 @@
     $('#btnBirthConfirm').on('click', function () {
         commitBirthYear($birthInput.val());
     });
+
+    // ★★★ 实时触发：在输入框变化时立即计算与渲染（无防抖）
+    $birthInput.on('input', function () {
+        commitBirthYear(this.value, {preserveTyping: true, noStore: true, live: true});
+    });
+
+    // 回车确认仍然可用
     $birthInput.on('keydown', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault();
-            $('#btnBirthConfirm').click();
+            commitBirthYear($birthInput.val()); // 直接提交
         }
     });
+
     $('input[name="sex"]').on('change', function () {
         commitGender();
     });
 
-    // ====== 新增：生命进度圆环绘制（原生 Canvas） ======
+    // ====== 生命进度圆环绘制（原生 Canvas） ======
     function drawLifeRing(birthYear) {
         const canvas = document.getElementById('lifeRingCanvas');
         if (!canvas) return;
@@ -789,15 +811,17 @@
 
         // 颜色取与你表格一致的风格
         const COLOR_BG = '#ffffff';
-        const COLOR_RING_BORDER = '#e9ecef';
-        const COLOR_HEALTHY = '#f8f9fa';   // 表格healthy为白底+点阵，近似用浅灰
-        const COLOR_FRAIL = '#fff3cd';
-        const COLOR_DISABLED = '#fdecec';
-        const COLOR_PAST = 'rgba(173,181,189,.55)'; // 已过去阴影
-        const COLOR_TICK = '#6c757d';
-        const COLOR_TICK_PAST = '#adb5bd';
-        const COLOR_POINTER = '#343a40';
-        const COLOR_TEXT = '#495057';
+        themeColors = {
+            RING_BORDER: '#e9ecef',
+            HEALTHY: '#f8f9fa',
+            FRAIL: '#fff3cd',
+            DISABLED: '#fdecec',
+            PAST: 'rgba(173,181,189,.55)',
+            TICK: '#6c757d',
+            TICK_PAST: '#adb5bd',
+            POINTER: '#343a40',
+            TEXT: '#495057'
+        };
 
         // 年龄分数（包含月、日）
         const ageFrac = clamp((CUR_YEAR - birthYear), 0, MAX_AGE); // [0, MAX_AGE]
@@ -816,7 +840,7 @@
             ctx.fillStyle = fill;
             ctx.fill();
             // 细边
-            ctx.strokeStyle = COLOR_RING_BORDER;
+            ctx.strokeStyle = themeColors.RING_BORDER;
             ctx.lineWidth = 1;
             ctx.stroke();
         }
@@ -835,9 +859,9 @@
         const aDisab1 = angOf(MAX_AGE);
 
         // 画分段底色（与表格一致）
-        drawRingSlice(aHealthy0, aHealthy1, COLOR_HEALTHY);
-        drawRingSlice(aFrail0, aFrail1, COLOR_FRAIL);
-        drawRingSlice(aDisab0, aDisab1, COLOR_DISABLED);
+        drawRingSlice(aHealthy0, aHealthy1, themeColors.HEALTHY);
+        drawRingSlice(aFrail0, aFrail1, themeColors.FRAIL);
+        drawRingSlice(aDisab0, aDisab1, themeColors.DISABLED);
 
         // 叠加“已过去”阴影（从起点到当前指针角）
         const aPast1 = angOf(ageFrac);
@@ -846,10 +870,10 @@
         ctx.arc(cx, cy, outerR, startRad, aPast1, false);
         ctx.arc(cx, cy, innerR, aPast1, startRad, true);
         ctx.closePath();
-        ctx.fillStyle = COLOR_PAST;
+        ctx.fillStyle = themeColors.PAST;
         ctx.fill();
 
-        // 刻度（1 ~ MAX_AGE），已过去灰、当前年加粗、未来深色
+        // 刻度（1 ~ MAX_AGE）
         ctx.lineCap = 'round';
         for (let i = 1; i <= MAX_AGE; i++) {
             const a = angOf(i);
@@ -861,9 +885,9 @@
             ctx.moveTo(cx + r0 * cos, cy + r0 * sin);
             ctx.lineTo(cx + r1 * cos, cy + r1 * sin);
 
-            if (i <= ageInt) ctx.strokeStyle = COLOR_TICK_PAST;
-            else if (i === ageInt + 1) ctx.strokeStyle = COLOR_POINTER; // 当前所在的“这个年”
-            else ctx.strokeStyle = COLOR_TICK;
+            if (i <= ageInt) ctx.strokeStyle = themeColors.TICK_PAST;
+            else if (i === ageInt + 1) ctx.strokeStyle = themeColors.POINTER; // 当前所在的“这个年”
+            else ctx.strokeStyle = themeColors.TICK;
 
             ctx.lineWidth = (i % 5 === 0) ? 2 : 1.2; // 每5年加粗
             ctx.stroke();
@@ -877,18 +901,18 @@
         ctx.beginPath();
         ctx.moveTo(cx + pointerR0 * cosP, cy + pointerR0 * sinP);
         ctx.lineTo(cx + pointerR1 * cosP, cy + pointerR1 * sinP);
-        ctx.strokeStyle = COLOR_POINTER;
+        ctx.strokeStyle = themeColors.POINTER;
         ctx.lineWidth = 2.2;
         ctx.stroke();
 
         // 指针端点小圆点
         ctx.beginPath();
         ctx.arc(cx + (outerR + 10) * cosP, cy + (outerR + 10) * sinP, 3.5, 0, TAU);
-        ctx.fillStyle = COLOR_POINTER;
+        ctx.fillStyle = themeColors.POINTER;
         ctx.fill();
 
-        // 段内文字（位于每段中心角、环带中线半径）
-        ctx.fillStyle = COLOR_TEXT;
+        // 段内文字
+        ctx.fillStyle = themeColors.TEXT;
         ctx.font = '600 14px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -898,7 +922,6 @@
             const am = (midFrom + midTo) / 2;
             const x = cx + midR * Math.cos(am);
             const y = cy + midR * Math.sin(am);
-            // 文字描边让浅底也清晰
             ctx.fillText(text, x, y);
         }
 
@@ -911,7 +934,7 @@
         ctx.font = '700 18px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial';
         ctx.fillText(`${phaseNow}`, cx, cy - 4);
         ctx.font = '12px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial';
-        ctx.fillText(`已用 ${usedPct.toFixed(2)}%`, cx, cy + 14);
+        ctx.fillText(`已用 ${usedPct.toFixed(2)}%\n还剩 ${HEALTHY_END + 1 - ageFrac}年`, cx, cy + 14);
 
         // 页面右上角小元信息
         const ym = `${CUR_YEAR}-${String(CUR_MONTH).padStart(2, '0')}`;
@@ -931,10 +954,8 @@
             $('#sexMale').prop('checked', true);
         }
 
-        updateHeader(defaultBirth);
-        buildTable(defaultBirth);
-        setLegendBySystemDate(defaultBirth);
-        applyMaxAge(maxAgeByGender(savedGender), defaultBirth); // 内部会首次 drawLifeRing
+        // 首次渲染
+        applyMaxAge(maxAgeByGender(savedGender), defaultBirth);
 
         // 初始化性别按钮外观
         commitGender();
