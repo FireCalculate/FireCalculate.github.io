@@ -96,6 +96,10 @@
         .bottom-navigation {
             z-index: 1000;
         }
+
+        .btn-ops-group .btn {
+            margin: 0 .15rem;
+        }
     </style>
 </head>
 <body>
@@ -229,9 +233,8 @@
 
     /* ===== 工具函数 ===== */
     const fmt = n => Number(n || 0).toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    // 新增：用于“合计行”的纯数字格式（去掉千分位）
+    // 合计使用“纯数字”（无千分位）
     const fmtPlain = n => (Number(n || 0)).toFixed(2);
-
     const parseNum = v => isNaN(parseFloat(v)) ? 0 : parseFloat(v);
 
     function calcByDays(amount, days) {
@@ -268,7 +271,13 @@
         const $tdG = $('<td class="num cell-yearly">0.00</td>');
         const $tdH = $('<td class="num cell-30y">0.00</td>');
         const $tdI = $('<td class="num cell-custom-y">0.00</td>');
-        const $tdOps = $('<td class="text-center"></td>').append('<button class="btn btn-sm btn-outline-danger btn-del">删除</button>');
+
+        // 操作列：上移 / 下移 / 删除
+        const $btnUp = $('<button class="btn btn-sm btn-outline-secondary btn-move-up" title="上移">↑</button>');
+        const $btnDown = $('<button class="btn btn-sm btn-outline-secondary btn-move-down" title="下移">↓</button>');
+        const $btnDel = $('<button class="btn btn-sm btn-outline-danger btn-del" title="删除">删除</button>');
+        const $opsWrap = $('<div class="btn-ops-group d-inline-flex align-items-center"></div>').append($btnUp, $btnDown, $btnDel);
+        const $tdOps = $('<td class="text-center"></td>').append($opsWrap);
 
         $tr.append($tdCat, $tdName, $tdPer, $tdAmt, $tdE, $tdF, $tdG, $tdH, $tdI, $tdOps);
 
@@ -278,14 +287,44 @@
             computeTotals();
             saveToLocalStorage();
         });
+
         $tr.on('click', '.btn-del', () => {
             $tr.remove();
             computeTotals();
             saveToLocalStorage();
+            updateMoveButtons();
+        });
+
+        $tr.on('click', '.btn-move-up', () => {
+            const $prev = $tr.prev('tr');
+            if ($prev.length) {
+                $tr.insertBefore($prev);
+                computeTotals();
+                saveToLocalStorage();
+                updateMoveButtons();
+            }
+        });
+
+        $tr.on('click', '.btn-move-down', () => {
+            const $next = $tr.next('tr');
+            if ($next.length) {
+                $tr.insertAfter($next);
+                computeTotals();
+                saveToLocalStorage();
+                updateMoveButtons();
+            }
         });
 
         computeRow($tr);
         return $tr;
+    }
+
+    function updateMoveButtons() {
+        const $rows = $('#tbody tr');
+        $rows.find('.btn-move-up, .btn-move-down').prop('disabled', false);
+        if ($rows.length === 0) return;
+        $rows.first().find('.btn-move-up').prop('disabled', true);
+        $rows.last().find('.btn-move-down').prop('disabled', true);
     }
 
     function computeRow($tr) {
@@ -317,7 +356,6 @@
             sumH += h;
             sumI += i;
         });
-        // 合计行改为“原始数字”（无千分位），保留两位小数
         $('#sumD').text(fmtPlain(sumD));
         $('#sumE').text(fmtPlain(sumE));
         $('#sumF').text(fmtPlain(sumF));
@@ -331,6 +369,7 @@
             computeRow($(this));
         });
         computeTotals();
+        updateMoveButtons();
     }
 
     /* ===== LocalStorage（行数据） ===== */
@@ -538,12 +577,14 @@
     /* ===== 初始化 ===== */
     function addRow(data) {
         $('#tbody').append(buildRow(data));
+        updateMoveButtons();
     }
 
     function mountRows(rows) {
         $('#tbody').empty();
         rows.forEach(r => addRow(r));
         computeTotals();
+        updateMoveButtons();
     }
 
     $(function () {
@@ -569,6 +610,7 @@
             $('#tbody').empty();
             computeTotals();
             clearLocal();
+            updateMoveButtons();
         });
         $('#exportCSV').on('click', exportCSV);
     });
