@@ -624,7 +624,7 @@
     function updateHeader(birthYear) {
         const age = CUR_YEAR - birthYear;
         const lifeLeft = clamp(MAX_AGE - age, 0, MAX_AGE);
-        const agePct = (age <= 0) ? 0 : (age / MAX_AGE) * 100;
+        const agePct = (age <= 0) ? 0 : Math.min((age / MAX_AGE) * 100, 100);
         const FRAIL_START = HEALTHY_END + 1; // 60
         const DISABLED_START = FRAIL_END + 1; // 70
 
@@ -633,7 +633,7 @@
             .attr('aria-valuenow', fmtPct(healthyUsedPct))
             .attr('title', `健康期已使用 ${fmtPct(healthyUsedPct)}%`);
         $('#healthyUsedPctLabel').text(fmtPct(healthyUsedPct));
-        const healthyNumerator = clamp(age, 0, FRAIL_START);
+        const healthyNumerator = clamp(age, 0, HEALTHY_END);
         $('#healthyUsedFracLabel').text(`(${healthyNumerator}/${HEALTHY_END})`);
 
         const toFrail = clamp(FRAIL_START - age, 0, MAX_AGE);
@@ -817,7 +817,7 @@
         const COLOR_TEXT = '#495057';
 
         // 年龄分数（包含月、日）
-        const ageFrac = clamp((CUR_YEAR - birthYear) , 0, MAX_AGE); // [0, MAX_AGE]
+        const ageFrac = clamp((CUR_YEAR - birthYear), 0, MAX_AGE); // [0, MAX_AGE]
         const ageInt = Math.floor(ageFrac);
         const phaseNow = phaseLabelByAge(Math.max(1, ageInt));
 
