@@ -15,7 +15,7 @@
         <label for="principal">本金:</label>
         <div class="input-group">
             <input type="number" id="principal" class="form-control form-control-lg" min="0" max="999999999"
-                   step="100000" value="2000000" oninput="limitInputLength(this, 15)"/>
+                   step="100000" value="1600000" oninput="limitInputLength(this, 15)"/>
             <div class="input-group-append">
                 <button class="btn btn-outline-secondary btn-lg" type="button" onclick="decrementPrincipal()">-</button>
                 <button class="btn btn-outline-secondary btn-lg" type="button" onclick="incrementPrincipal()">+</button>
@@ -59,7 +59,7 @@
         <label for="annualExpenses">年消费<a href="expense.html" target="_blank" class="th-info alert-link-life">(→消费盘点)</a>:</label>
         <div class="input-group">
             <input type="number" id="annualExpenses" class="form-control form-control-lg" min="0" max="99999999"
-                   step="5000" value="45000" oninput="limitInputLength(this, 10)"/>
+                   step="5000" value="35000" oninput="limitInputLength(this, 10)"/>
             <div class="input-group-append">
                 <button class="btn btn-outline-secondary btn-lg" type="button" onclick="decrementAnnualExpenses()">-
                 </button>
@@ -364,10 +364,10 @@
 
     function resetAllData() {
         // 重置表单字段
-        principalEle.value = 2000000;
+        principalEle.value = 1600000;
         annualInterestRateEle.value = (2.000).toFixed(3);
         stableIncomeEle.value = 0;
-        annualExpensesEle.value = 45000;
+        annualExpensesEle.value = 35000;
         inflationRateEle.value = 2.229;
         startYearEle.value = currentSystemYear;
 
