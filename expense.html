@@ -101,7 +101,6 @@
             margin: 0 .15rem;
         }
 
-        /* 列隐藏统一样式 */
         .col-hidden {
             display: none !important;
         }
@@ -236,21 +235,12 @@
         <div class="mt-2">
             <div class="small text-muted mb-1">显示列（可勾选/取消，支持持久化记忆）</div>
             <div class="d-flex flex-wrap align-items-center">
-                <label class="mr-3 mb-2">
-                    <input type="checkbox" id="toggleDaily" checked> 日均
-                </label>
-                <label class="mr-3 mb-2">
-                    <input type="checkbox" id="toggleMonthly" checked> 月均
-                </label>
-                <label class="mr-3 mb-2">
-                    <input type="checkbox" id="toggleYearly" checked> 年均
-                </label>
-                <label class="mr-3 mb-2">
-                    <input type="checkbox" id="toggle30y" checked> 30年
-                </label>
-                <label class="mr-3 mb-2 d-flex align-items-center">
-                    <input type="checkbox" id="toggleCustom" checked> <span class="ml-1" id="yearsLabel2">自定义</span>年
-                </label>
+                <label class="mr-3 mb-2"><input type="checkbox" id="toggleDaily" checked> 日均</label>
+                <label class="mr-3 mb-2"><input type="checkbox" id="toggleMonthly" checked> 月均</label>
+                <label class="mr-3 mb-2"><input type="checkbox" id="toggleYearly" checked> 年均</label>
+                <label class="mr-3 mb-2"><input type="checkbox" id="toggle30y" checked> 30年</label>
+                <label class="mr-3 mb-2 d-flex align-items-center"><input type="checkbox" id="toggleCustom" checked>
+                    <span class="ml-1" id="yearsLabel2">自定义</span>年</label>
             </div>
         </div>
     </div>
@@ -312,7 +302,6 @@
 
 <script>
     /* ===== 配置 ===== */
-    // 扩展周期可选项：新增 每6年~每10年
     const PERIOD_OPTIONS = [
         "每天", "每周", "每月", "每年",
         "每2年", "每3年", "每4年", "每5年",
@@ -331,7 +320,6 @@
 
     // 列显示状态持久化键
     const LS_COLS_KEY = 'expense_cols_visibility_v1';
-    // 列选择器定义
     const COLS = {
         daily: {th: '.th-daily', tds: 'td.cell-daily', tf: 'td.tfoot-daily'},
         monthly: {th: '.th-monthly', tds: 'td.cell-monthly', tf: 'td.tfoot-monthly'},
@@ -342,7 +330,7 @@
 
     let selectedYears = YEARS_DEFAULT;
 
-    /* 示例模板(保持不变，可自由编辑) */
+    /* 示例模板 */
     const TEMPLATE_ROWS = [
         {cat: "饮食", name: "早餐", period: "每天", amount: 3},
         {cat: "饮食", name: "中饭(自己做)", period: "每天", amount: 15},
@@ -370,25 +358,22 @@
 
     /* ===== 工具函数 ===== */
     const fmt = n => Number(n || 0).toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-    // 合计使用“纯数字”（无千分位）
     const fmtPlain = n => (Number(n || 0)).toFixed(2);
     const parseNum = v => isNaN(parseFloat(v)) ? 0 : parseFloat(v);
 
     function calcByDays(amount, days) {
         if (!days) return {E: 0, F: 0, G: 0, H: 0, I: 0};
-        const E = amount / days;   // 日均
-        const F = E * 30;          // 月均
-        const G = E * 365;         // 年均
-        const H = G * 30;          // 30年
-        const I = G * selectedYears; // N年（下拉可选）
+        const E = amount / days;
+        const F = E * 30;
+        const G = E * 365;
+        const H = G * 30;
+        const I = G * selectedYears;
         return {E, F, G, H, I};
     }
 
     function buildSelect(options, selected) {
         const $sel = $('<select class="form-control form-control-sm"></select>');
-        options.forEach(opt => {
-            $sel.append(`<option ${opt === selected ? 'selected' : ''}>${opt}</option>`);
-        });
+        options.forEach(opt => $sel.append(`<option ${opt === selected ? 'selected' : ''}>${opt}</option>`));
         return $sel;
     }
 
@@ -409,7 +394,6 @@
         const $tdH = $('<td class="num cell-30y">0.00</td>');
         const $tdI = $('<td class="num cell-custom-y">0.00</td>');
 
-        // 操作列：上移 / 下移 / 删除
         const $btnUp = $('<button class="btn btn-sm btn-outline-secondary btn-move-up" title="上移">↑</button>');
         const $btnDown = $('<button class="btn btn-sm btn-outline-secondary btn-move-down" title="下移">↓</button>');
         const $btnDel = $('<button class="btn btn-sm btn-outline-danger btn-del" title="删除">删除</button>');
@@ -418,41 +402,37 @@
 
         $tr.append($tdCat, $tdName, $tdPer, $tdAmt, $tdE, $tdF, $tdG, $tdH, $tdI, $tdOps);
 
-        // 事件
         $tr.on('input change', '.input-amount, .select-period, .input-name, .input-cat', () => {
             computeRow($tr);
             computeTotals();
             saveToLocalStorage();
-            updateCategoryChart(); // 图表联动
+            updateCategoryChart();
         });
-
         $tr.on('click', '.btn-del', () => {
             $tr.remove();
             computeTotals();
             saveToLocalStorage();
             updateMoveButtons();
-            updateCategoryChart(); // 图表联动
+            updateCategoryChart();
         });
-
         $tr.on('click', '.btn-move-up', () => {
-            const $prev = $tr.prev('tr');
-            if ($prev.length) {
-                $tr.insertBefore($prev);
+            const $p = $tr.prev('tr');
+            if ($p.length) {
+                $tr.insertBefore($p);
                 computeTotals();
                 saveToLocalStorage();
                 updateMoveButtons();
-                updateCategoryChart(); // 图表联动
+                updateCategoryChart();
             }
         });
-
         $tr.on('click', '.btn-move-down', () => {
-            const $next = $tr.next('tr');
-            if ($next.length) {
-                $tr.insertAfter($next);
+            const $n = $tr.next('tr');
+            if ($n.length) {
+                $tr.insertAfter($n);
                 computeTotals();
                 saveToLocalStorage();
                 updateMoveButtons();
-                updateCategoryChart(); // 图表联动
+                updateCategoryChart();
             }
         });
 
@@ -503,10 +483,11 @@
         $('#sumG').text(fmtPlain(sumG));
         $('#sumH').text(fmtPlain(sumH));
         $('#sumI').text(fmtPlain(sumI));
-        // 汇总文字（图表右上角）
-        const sumGNum = Number(sumG || 0);
         document.getElementById('chartSummary').textContent =
-            '年均合计：¥ ' + sumGNum.toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            '年均合计：¥ ' + Number(sumG || 0).toLocaleString('zh-CN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
     }
 
     function recomputeAll() {
@@ -517,7 +498,7 @@
         updateMoveButtons();
     }
 
-    /* ===== LocalStorage（行数据） ===== */
+    /* ===== LocalStorage（行数据/年数/列显示） ===== */
     function saveToLocalStorage() {
         const rows = [];
         $('#tbody tr').each(function () {
@@ -536,8 +517,7 @@
             const json = localStorage.getItem(LS_KEY);
             if (!json) return null;
             const rows = JSON.parse(json);
-            if (!Array.isArray(rows)) return null;
-            return rows;
+            return Array.isArray(rows) ? rows : null;
         } catch (e) {
             return null;
         }
@@ -547,7 +527,6 @@
         localStorage.removeItem(LS_KEY);
     }
 
-    /* ===== LocalStorage（年数） ===== */
     function saveYearsToLocalStorage() {
         localStorage.setItem(LS_YEARS_KEY, String(selectedYears));
     }
@@ -559,7 +538,6 @@
         return (Number.isFinite(n) && n >= 1 && n <= 100) ? n : YEARS_DEFAULT;
     }
 
-    /* ===== 年数下拉初始化 ===== */
     function initYearsSelect() {
         const $sel = $('#yearsSelect');
         $sel.empty();
@@ -567,13 +545,12 @@
         selectedYears = loadYearsFromLocalStorage();
         $sel.val(String(selectedYears));
         updateYearsUI();
-
         $sel.on('change', () => {
             selectedYears = parseInt($sel.val(), 10) || YEARS_DEFAULT;
             saveYearsToLocalStorage();
             updateYearsUI();
             recomputeAll();
-            updateCategoryChart(); // 年数变化不影响年均，但保持同步
+            updateCategoryChart();
         });
     }
 
@@ -582,7 +559,6 @@
         $('#yearsLabel2').text(String(selectedYears));
     }
 
-    /* ===== CSV 导入/导出 ===== */
     function parseCSVLine(line) {
         const out = [];
         let cur = '', inQuotes = false;
@@ -674,12 +650,10 @@
             const arr = parseCSVLine(lines[i]);
             if (!arr.length) continue;
             if ((arr[0] || '').trim() === '合计') break;
-
             const cat = (arr[0] || '其它').trim() || '其它';
             const name = (arr[1] || '').trim();
             const period = (arr[2] || '每月').trim();
             const amount = parseNum(arr[3]);
-
             rows.push({cat, name, period, amount});
         }
         if (!rows.length) {
@@ -691,10 +665,9 @@
         $('#yearsSelect').val(String(selectedYears));
         updateYearsUI();
         saveYearsToLocalStorage();
-
         mountRows(rows);
         saveToLocalStorage();
-        updateCategoryChart(); // 图表联动
+        updateCategoryChart();
     }
 
     function bindImport() {
@@ -722,7 +695,6 @@
         });
     }
 
-    /* ===== 列显示控制 ===== */
     function loadColsVisibility() {
         try {
             const json = localStorage.getItem(LS_COLS_KEY);
@@ -745,7 +717,6 @@
     }
 
     function applyColsVisibility(state) {
-        // 逐列处理：显示=移除隐藏类；隐藏=添加隐藏类
         Object.entries(COLS).forEach(([key, sel]) => {
             const show = !!state[key];
             $(sel.th).toggleClass('col-hidden', !show);
@@ -756,18 +727,13 @@
 
     function bindColsToggles(state) {
         const map = {
-            daily: '#toggleDaily',
-            monthly: '#toggleMonthly',
-            yearly: '#toggleYearly',
-            y30: '#toggle30y',
-            custom: '#toggleCustom'
+            daily: '#toggleDaily', monthly: '#toggleMonthly',
+            yearly: '#toggleYearly', y30: '#toggle30y', custom: '#toggleCustom'
         };
-        // 初始同步勾选状态
         Object.entries(map).forEach(([k, sel]) => {
             const el = document.querySelector(sel);
             if (el) el.checked = !!state[k];
         });
-        // 绑定事件
         Object.entries(map).forEach(([k, sel]) => {
             $(sel).on('change', function () {
                 state[k] = this.checked;
@@ -778,40 +744,25 @@
     }
 
     /* ====== 类目汇总 & 图表 ====== */
-    // 与“截图风格”一致的柔和配色（固定顺序，类目不足会循环使用）
-    const PALETTE = [
-        '#3b82f6', // 蓝
-        '#10b981', // 绿
-        '#f59e0b', // 橙
-        '#ef4444', // 红
-        '#8b5cf6', // 紫
-        '#06b6d4', // 青
-        '#f97316', // 橘
-        '#64748b'  // 灰
-    ];
-
+    const PALETTE = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#64748b'];
     let categoryChart = null;
 
     function getAnnualForRow($tr) {
-        // 根据行数据计算年均金额（与表格一致：日均×365）
         const amount = parseNum($tr.find('.input-amount').val());
         const period = $tr.find('.select-period').val() || '每月';
         const days = PERIOD_TO_DAYS[period] || 0;
         if (!days) return 0;
         const E = amount / days;
-        const G = E * 365;
-        return G;
+        return E * 365; // 年均
     }
 
     function computeCategoryTotals() {
-        // 返回 {cat: annualSum}
         const map = new Map();
         $('#tbody tr').each(function () {
             const $tr = $(this);
             const cat = ($tr.find('.input-cat').val() || '其它');
             const annual = getAnnualForRow($tr);
-            const prev = map.get(cat) || 0;
-            map.set(cat, prev + annual);
+            map.set(cat, (map.get(cat) || 0) + annual);
         });
         return map;
     }
@@ -820,7 +771,6 @@
         const $legend = $('#categoryLegend');
         $legend.empty();
         if (total <= 0 || labels.length === 0) return;
-
         labels.forEach((lbl, idx) => {
             const val = values[idx] || 0;
             const pct = total > 0 ? (val / total * 100) : 0;
@@ -845,20 +795,18 @@
 
     function updateCategoryChart() {
         const totals = computeCategoryTotals();
-        // 仅保留 >0 的类目
-        const labels = [];
-        const data = [];
-        totals.forEach((v, k) => {
-            if (v > 0.000001) {
-                labels.push(k);
-                data.push(v);
-            }
-        });
+
+        // ===== 关键改动：按“年均金额”从大到小排序 =====
+        const entries = Array.from(totals.entries())
+            .filter(([_, v]) => v > 0.000001)
+            .sort((a, b) => b[1] - a[1]);   // DESC by value
+
+        const labels = entries.map(([k]) => k);
+        const data = entries.map(([_, v]) => v);
 
         const total = data.reduce((a, b) => a + b, 0);
         const emptyEl = document.getElementById('chartEmpty');
         if (total <= 0) {
-            // 清空图表并显示“暂无数据”
             if (categoryChart) {
                 categoryChart.destroy();
                 categoryChart = null;
@@ -870,27 +818,16 @@
             emptyEl.classList.remove('show');
         }
 
-        // 颜色（按 labels 顺序轮询 PALETTE）
+        // 颜色按排序后的顺序分配
         const colors = labels.map((_, i) => PALETTE[i % PALETTE.length]);
 
-        // 图表配置
         const ctx = document.getElementById('categoryChart').getContext('2d');
-
-        // 重建图表（避免 dataset 动态增删导致的引用问题）
         if (categoryChart) {
             categoryChart.destroy();
         }
         categoryChart = new Chart(ctx, {
             type: 'doughnut',
-            data: {
-                labels,
-                datasets: [{
-                    data,
-                    backgroundColor: colors,
-                    borderWidth: 0,
-                    hoverOffset: 6
-                }]
-            },
+            data: {labels, datasets: [{data, backgroundColor: colors, borderWidth: 0, hoverOffset: 6}]},
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -913,7 +850,6 @@
             }
         });
 
-        // 自定义图例
         renderLegend(labels, colors, data, total);
     }
 
@@ -928,47 +864,38 @@
         rows.forEach(r => addRow(r));
         computeTotals();
         updateMoveButtons();
-
-        // 应用列隐藏到新渲染的行
         applyColsVisibility(loadColsVisibility());
-
-        // 渲染图表
         updateCategoryChart();
     }
 
     $(function () {
-        // 初始化“年数”选择 & 导入绑定
         initYearsSelect();
         bindImport();
 
-        // 载入本地或模板
         const saved = loadFromLocalStorage();
         mountRows(saved && saved.length ? saved : TEMPLATE_ROWS);
 
-        // 绑定按钮
         $('#addRow').on('click', () => {
             addRow({cat: "其它", name: "", period: "每月", amount: 0});
             saveToLocalStorage();
-            // 新增行也要应用列隐藏
             applyColsVisibility(loadColsVisibility());
-            updateCategoryChart(); // 图表联动
+            updateCategoryChart();
         });
         $('#restoreTemplate').on('click', () => {
             mountRows(TEMPLATE_ROWS);
             clearLocal();
             saveToLocalStorage();
-            updateCategoryChart(); // 图表联动
+            updateCategoryChart();
         });
         $('#clearAll').on('click', () => {
             $('#tbody').empty();
             computeTotals();
             clearLocal();
             updateMoveButtons();
-            updateCategoryChart(); // 图表联动
+            updateCategoryChart();
         });
         $('#exportCSV').on('click', exportCSV);
 
-        // 列显示控制：加载状态、绑定事件、首次应用
         const colState = loadColsVisibility();
         bindColsToggles(colState);
         applyColsVisibility(colState);
