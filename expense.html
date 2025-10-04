@@ -105,6 +105,79 @@
         .col-hidden {
             display: none !important;
         }
+
+        /* ====== 图表区域样式（与现有风格统一） ====== */
+        .chart-wrap {
+            position: relative;
+            min-height: 260px;
+        }
+
+        .legend {
+            line-height: 1.2;
+        }
+
+        .legend .legend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #e9ecef;
+            border-radius: .5rem;
+            padding: .4rem .6rem;
+            background: #fff;
+            margin-bottom: .5rem;
+        }
+
+        .legend .legend-left {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+        }
+
+        .legend .legend-box {
+            width: 14px;
+            height: 14px;
+            border: 1px solid #ced4da;
+            margin-right: 8px;
+        }
+
+        .legend .legend-label {
+            font-weight: 600;
+            color: #212529;
+            white-space: nowrap;
+        }
+
+        .legend .legend-right {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            margin-left: 8px;
+        }
+
+        .legend .legend-amt {
+            color: #212529;
+        }
+
+        .legend .legend-pct {
+            color: #6c757d;
+            margin-left: 6px;
+        }
+
+        .chart-empty {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: .95rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px dashed #e9ecef;
+            border-radius: .75rem;
+        }
+
+        .chart-empty.show {
+            display: flex;
+        }
     </style>
 </head>
 <body>
@@ -112,6 +185,28 @@
     <div class="d-flex align-items-center mb-3">
         <h2 class="page-title mb-0">消费盘点</h2>
         <div class="ml-3 tag">日均 / 月均 / 年均 / 30年 / <span id="yearsLabel">--</span>年</div>
+    </div>
+
+    <!-- ===== 新增：类目消费占比（圆环图） ===== -->
+    <div class="card-soft p-3 mb-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="d-flex align-items-center">
+                <h5 class="mb-0 mr-2">类目消费占比</h5>
+                <span class="th-info">口径：年均金额（=日均×365）</span>
+            </div>
+            <div id="chartSummary" class="small text-muted">—</div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-md-7">
+                <div class="chart-wrap p-2">
+                    <canvas id="categoryChart" height="200"></canvas>
+                    <div id="chartEmpty" class="chart-empty">暂无数据</div>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div id="categoryLegend" class="legend small"></div>
+            </div>
+        </div>
     </div>
 
     <!-- 控件区 -->
@@ -211,6 +306,9 @@
     <!--<a href="clock.html">⏰ FIRE时钟</a>-->
     <a href="rental.html">🏠 房产租售比</a>
 </div>
+
+<!-- 引入 Chart.js（与计算器页一致的路径） -->
+<script src="dist/chart.min.js"></script>
 
 <script>
     /* ===== 配置 ===== */
@@ -325,6 +423,7 @@
             computeRow($tr);
             computeTotals();
             saveToLocalStorage();
+            updateCategoryChart(); // 图表联动
         });
 
         $tr.on('click', '.btn-del', () => {
@@ -332,6 +431,7 @@
             computeTotals();
             saveToLocalStorage();
             updateMoveButtons();
+            updateCategoryChart(); // 图表联动
         });
 
         $tr.on('click', '.btn-move-up', () => {
@@ -341,6 +441,7 @@
                 computeTotals();
                 saveToLocalStorage();
                 updateMoveButtons();
+                updateCategoryChart(); // 图表联动
             }
         });
 
@@ -351,6 +452,7 @@
                 computeTotals();
                 saveToLocalStorage();
                 updateMoveButtons();
+                updateCategoryChart(); // 图表联动
             }
         });
 
@@ -401,6 +503,10 @@
         $('#sumG').text(fmtPlain(sumG));
         $('#sumH').text(fmtPlain(sumH));
         $('#sumI').text(fmtPlain(sumI));
+        // 汇总文字（图表右上角）
+        const sumGNum = Number(sumG || 0);
+        document.getElementById('chartSummary').textContent =
+            '年均合计：¥ ' + sumGNum.toLocaleString('zh-CN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     }
 
     function recomputeAll() {
@@ -467,6 +573,7 @@
             saveYearsToLocalStorage();
             updateYearsUI();
             recomputeAll();
+            updateCategoryChart(); // 年数变化不影响年均，但保持同步
         });
     }
 
@@ -587,6 +694,7 @@
 
         mountRows(rows);
         saveToLocalStorage();
+        updateCategoryChart(); // 图表联动
     }
 
     function bindImport() {
@@ -669,6 +777,146 @@
         });
     }
 
+    /* ====== 类目汇总 & 图表 ====== */
+    // 与“截图风格”一致的柔和配色（固定顺序，类目不足会循环使用）
+    const PALETTE = [
+        '#3b82f6', // 蓝
+        '#10b981', // 绿
+        '#f59e0b', // 橙
+        '#ef4444', // 红
+        '#8b5cf6', // 紫
+        '#06b6d4', // 青
+        '#f97316', // 橘
+        '#64748b'  // 灰
+    ];
+
+    let categoryChart = null;
+
+    function getAnnualForRow($tr) {
+        // 根据行数据计算年均金额（与表格一致：日均×365）
+        const amount = parseNum($tr.find('.input-amount').val());
+        const period = $tr.find('.select-period').val() || '每月';
+        const days = PERIOD_TO_DAYS[period] || 0;
+        if (!days) return 0;
+        const E = amount / days;
+        const G = E * 365;
+        return G;
+    }
+
+    function computeCategoryTotals() {
+        // 返回 {cat: annualSum}
+        const map = new Map();
+        $('#tbody tr').each(function () {
+            const $tr = $(this);
+            const cat = ($tr.find('.input-cat').val() || '其它');
+            const annual = getAnnualForRow($tr);
+            const prev = map.get(cat) || 0;
+            map.set(cat, prev + annual);
+        });
+        return map;
+    }
+
+    function renderLegend(labels, colors, values, total) {
+        const $legend = $('#categoryLegend');
+        $legend.empty();
+        if (total <= 0 || labels.length === 0) return;
+
+        labels.forEach((lbl, idx) => {
+            const val = values[idx] || 0;
+            const pct = total > 0 ? (val / total * 100) : 0;
+            const $item = $(`
+                <div class="legend-item">
+                    <div class="legend-left">
+                        <span class="legend-box" style="background:${colors[idx]}"></span>
+                        <span class="legend-label">${lbl}</span>
+                    </div>
+                    <div class="legend-right">
+                        <span class="legend-amt">¥ ${val.toLocaleString('zh-CN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}</span>
+                        <span class="legend-pct">(${pct.toFixed(1)}%)</span>
+                    </div>
+                </div>
+            `);
+            $legend.append($item);
+        });
+    }
+
+    function updateCategoryChart() {
+        const totals = computeCategoryTotals();
+        // 仅保留 >0 的类目
+        const labels = [];
+        const data = [];
+        totals.forEach((v, k) => {
+            if (v > 0.000001) {
+                labels.push(k);
+                data.push(v);
+            }
+        });
+
+        const total = data.reduce((a, b) => a + b, 0);
+        const emptyEl = document.getElementById('chartEmpty');
+        if (total <= 0) {
+            // 清空图表并显示“暂无数据”
+            if (categoryChart) {
+                categoryChart.destroy();
+                categoryChart = null;
+            }
+            emptyEl.classList.add('show');
+            $('#categoryLegend').empty();
+            return;
+        } else {
+            emptyEl.classList.remove('show');
+        }
+
+        // 颜色（按 labels 顺序轮询 PALETTE）
+        const colors = labels.map((_, i) => PALETTE[i % PALETTE.length]);
+
+        // 图表配置
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+
+        // 重建图表（避免 dataset 动态增删导致的引用问题）
+        if (categoryChart) {
+            categoryChart.destroy();
+        }
+        categoryChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    backgroundColor: colors,
+                    borderWidth: 0,
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '62%',
+                plugins: {
+                    legend: {display: false},
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => {
+                                const v = ctx.parsed || 0;
+                                const p = total > 0 ? (v / total * 100) : 0;
+                                return `${ctx.label}: ¥ ${v.toLocaleString('zh-CN', {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                })}  (${p.toFixed(1)}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // 自定义图例
+        renderLegend(labels, colors, data, total);
+    }
+
     /* ===== 初始化 ===== */
     function addRow(data) {
         $('#tbody').append(buildRow(data));
@@ -683,6 +931,9 @@
 
         // 应用列隐藏到新渲染的行
         applyColsVisibility(loadColsVisibility());
+
+        // 渲染图表
+        updateCategoryChart();
     }
 
     $(function () {
@@ -700,17 +951,20 @@
             saveToLocalStorage();
             // 新增行也要应用列隐藏
             applyColsVisibility(loadColsVisibility());
+            updateCategoryChart(); // 图表联动
         });
         $('#restoreTemplate').on('click', () => {
             mountRows(TEMPLATE_ROWS);
             clearLocal();
             saveToLocalStorage();
+            updateCategoryChart(); // 图表联动
         });
         $('#clearAll').on('click', () => {
             $('#tbody').empty();
             computeTotals();
             clearLocal();
             updateMoveButtons();
+            updateCategoryChart(); // 图表联动
         });
         $('#exportCSV').on('click', exportCSV);
 
