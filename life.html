@@ -5,6 +5,8 @@
     <meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
     <link rel="icon" href="dist/favicon/life.ico"/>
     <title>生命余额</title>
+
+    <!-- 你的样式与依赖 -->
     <link rel="stylesheet" type="text/css" href="dist/css/c070423032508.css">
     <link rel="stylesheet" type="text/css" href="dist/css/c220423282110.css">
     <link rel="stylesheet" href="dist/css/bootstrap.min.css">
@@ -12,13 +14,16 @@
     <script src="dist/js/bootstrap.min.js"></script>
     <script src="dist/js/bootstrap.bundle.min.js"></script>
 
+    <!-- 你提到可用的图表库（本实现未直接依赖，保留便于扩展） -->
+    <script src="dist/chart.min.js"></script>
+    <script src="dist/js/d3js.org_d3.v7.min.js"></script>
+
     <style>
         /* ========= Base ========= */
         body {
             background: #fff;
         }
 
-        /* ========= Pretty form controls ========= */
         .controls-card {
             background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
             border: 1px solid #e9ecef;
@@ -199,7 +204,6 @@
             min-width: 160px;
         }
 
-
         .progress {
             height: .6rem;
             background: #e9ecef;
@@ -229,7 +233,7 @@
             }
         }
 
-        /* ====== 语义纹理 ====== */
+        /* ====== 语义纹理（表格用） ====== */
         :root {
             --past-bg: #f1f3f5;
             --past-stroke: #dee2e6;
@@ -329,45 +333,80 @@
 
         /* === 统一控件高度 === */
         :root {
-            --control-h: 32px; /* 你也可以调成 34/36，看视觉需要 */
+            --control-h: 32px;
         }
 
-        /* 让 controls-card 里的 input-group 和 btn-group 统一高度 */
-        .controls-card .input-group-sm .form-control,
-        .controls-card .input-group-sm .btn {
+        .controls-card .input-group-sm .form-control, .controls-card .input-group-sm .btn {
             height: var(--control-h);
             padding-top: .25rem;
             padding-bottom: .25rem;
         }
 
-        /* 单独保证按钮组里的按钮等高、垂直居中 */
         .controls-card .btn-group-sm .btn {
             height: var(--control-h);
             display: inline-flex;
             align-items: center;
-            line-height: 1; /* 防止行高撑高 */
+            line-height: 1;
         }
 
-        /* 可选：让左右的 +/- 按钮在小尺寸下不显得窄 */
-        .controls-card .input-group-prepend .btn,
-        .controls-card .input-group-append .btn {
+        .controls-card .input-group-prepend .btn, .controls-card .input-group-append .btn {
             min-width: 32px;
             justify-content: center;
         }
 
-        /* 如果你想让两块控件在同一行“看起来就是一样高”，建议让父容器拉伸对齐 */
         .controls-card .d-flex.align-items-end {
             align-items: stretch !important;
+        }
+
+        /* ====== 圆环卡片（新增） ====== */
+        .ring-card {
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px solid #e9ecef;
+            border-radius: .75rem;
+        }
+
+        .ring-title {
+            font-weight: 700;
+            margin-bottom: .25rem;
+        }
+
+        .ring-subtle {
+            color: #6c757d;
+        }
+
+        .ring-canvas-wrap {
+            width: 100%;
+        }
+
+        /* 让 Canvas 自适应父容器宽度；高度通过 JS 设置比例 */
+        #lifeRingCanvas {
+            width: 100%;
+            display: block;
+        }
+
+        .bottom-navigation {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #fff;
+            border-top: 1px solid #e9ecef;
+            padding: 8px 12px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .bottom-navigation a {
+            text-decoration: none;
         }
     </style>
 </head>
 <body class="pb-5">
 <div class="container-fluid py-4">
 
-    <!-- 顶部统计行 -->
+    <!-- 顶部行：右侧控件 + 左侧概要 -->
     <div class="d-flex flex-wrap align-items-start justify-content-between">
-
-
         <!-- 右：控件 -->
         <div class="controls-card mb-3">
             <div class="d-flex flex-wrap align-items-end" style="gap: 18px;">
@@ -394,7 +433,7 @@
                     </small>
                 </div>
 
-                <!-- 性别选择（按钮组单选） -->
+                <!-- 性别选择 -->
                 <div>
                     <label class="form-label-compact d-block">性别</label>
                     <div class="btn-group btn-radio btn-group-sm" role="group" aria-label="Gender toggle">
@@ -425,23 +464,20 @@
                     <li>出生年份 <span id="birthYearLabel">--</span></li>
 
                     <li class="metric-line d-flex align-items-center">
-                        <div class="metric-label">
-                            当前年龄 <strong id="ageLabel">--</strong> 岁
-                        </div>
+                        <div class="metric-label">当前年龄 <strong id="ageLabel">--</strong> 岁</div>
                         <div class="progress metric-progress mx-2">
                             <div id="ageProgress" class="progress-bar bg-dark" role="progressbar"
                                  style="width:0%"></div>
                         </div>
                         <small class="subtle metric-tail">
-                            总寿命已使用 <span id="lifeUsedPctLabel">--</span>%
-                            <span id="lifeUsedFracLabel">(<span id="ageUsedFracLabel2">--</span>/<span
-                                    id="maxAgeTailLabel">--</span>)</span>
+                            总寿命已使用 <span id="lifeUsedPctLabel">--</span>% <span id="lifeUsedFracLabel">(<span
+                                id="ageUsedFracLabel2">--</span>/<span id="maxAgeTailLabel">--</span>)</span>
                         </small>
                     </li>
 
                     <li class="metric-line d-flex align-items-center">
-                        <div class="metric-label">距离死亡 <strong id="lifeLeftLabel">--</strong> 年
-                            (<span id="maxAgeLabelDeath">70</span>-<span id="ageFormulaLabelDeath">--</span>)
+                        <div class="metric-label">距离死亡 <strong id="lifeLeftLabel">--</strong> 年 (<span
+                                id="maxAgeLabelDeath">70</span>-<span id="ageFormulaLabelDeath">--</span>)
                         </div>
                     </li>
 
@@ -459,8 +495,8 @@
                     </li>
 
                     <li class="metric-line d-flex align-items-center">
-                        <div class="metric-label">
-                            距离失能期 <strong class="font-weight-bold" id="toDisabledLabel">--</strong> 年
+                        <div class="metric-label">距离失能期 <strong class="font-weight-bold"
+                                                                     id="toDisabledLabel">--</strong> 年
                             (<span id="disabledStartLabel">70</span>-<span id="ageFormulaLabel2">--</span>)
                         </div>
                     </li>
@@ -469,28 +505,30 @@
         </div>
     </div>
 
+    <!-- ====== 新增：生命进度圆环（在“生命概览”后、表格前） ====== -->
+    <div class="ring-card shadow-sm p-3 mb-3">
+        <div class="d-flex align-items-baseline justify-content-between">
+            <div>
+                <div class="ring-title">生命进度圆环</div>
+                <div class="ring-subtle">底色分段与下方表格一致；指针指向“当前月”，灰色阴影为已过去时段</div>
+            </div>
+            <small class="ring-subtle" id="ringMeta">—</small>
+        </div>
+        <div class="ring-canvas-wrap mt-2">
+            <canvas id="lifeRingCanvas" height="320" aria-label="生命进度圆环"></canvas>
+        </div>
+    </div>
+
     <!-- 颜色图例 -->
     <div class="legend my-3">
-    <span class="legend-item">
-      <span class="legend-box legend-past"></span>
-      <span id="legendPast">已过去</span>
-    </span>
-        <span class="legend-item">
-      <span class="legend-box legend-now"></span>
-      <span id="legendNow">当前月</span>
-    </span>
-        <span class="legend-item">
-      <span class="legend-box legend-healthy"></span>
-      <span id="legendHealthy">健康期(1~59)</span>
-    </span>
-        <span class="legend-item">
-      <span class="legend-box legend-frail"></span>
-      <span id="legendFrail">衰弱期(60~69)</span>
-    </span>
-        <span class="legend-item">
-      <span class="legend-box legend-disabled"></span>
-      <span id="legendDisabled">失能期(70~78)</span>
-    </span>
+        <span class="legend-item"><span class="legend-box legend-past"></span><span id="legendPast">已过去</span></span>
+        <span class="legend-item"><span class="legend-box legend-now"></span><span id="legendNow">当前月</span></span>
+        <span class="legend-item"><span class="legend-box legend-healthy"></span><span
+                id="legendHealthy">健康期(1~59)</span></span>
+        <span class="legend-item"><span class="legend-box legend-frail"></span><span
+                id="legendFrail">衰弱期(60~69)</span></span>
+        <span class="legend-item"><span class="legend-box legend-disabled"></span><span
+                id="legendDisabled">失能期(70~78)</span></span>
     </div>
 
     <!-- 表格 -->
@@ -529,20 +567,20 @@
 
 <script>
     // ====== 常量（阶段边界固定，MAX_AGE 可变）======
-    let MAX_AGE = 78; // 动态：男=75 / 女=80
+    let MAX_AGE = 78; // 动态：男=75 / 女=80（初始化将在 init/commitGender 中覆盖）
     const HEALTHY_END = 59; // 健康期：1–59 岁
-    const FRAIL_END = 69; // 衰弱期：60–69 岁（失能期：70–MAX_AGE）
+    const FRAIL_END = 69;   // 衰弱期：60–69 岁（失能期：70–MAX_AGE）
 
     // ====== 当前年月（按本地时区）======
     const now = new Date();
     const CUR_YEAR = now.getFullYear();
     const CUR_MONTH = now.getMonth() + 1; // 1..12
+    const CUR_DAY = now.getDate();
 
     function setLegendBySystemDate(birthYear) {
         const pad2 = n => String(n).padStart(2, '0');
         const prevYear = (CUR_MONTH === 1) ? (CUR_YEAR - 1) : CUR_YEAR;
         const prevMonth = (CUR_MONTH === 1) ? 12 : (CUR_MONTH - 1);
-
         const startYear = clamp(parseInt(birthYear, 10) || (CUR_YEAR - 35), 1900, 2100);
         $('#legendPast').text(`已过去(${startYear}~${prevYear}-${pad2(prevMonth)})`);
         $('#legendNow').text(`当前月(${CUR_YEAR}-${pad2(CUR_MONTH)})`);
@@ -557,7 +595,11 @@
         return Math.min(Math.max(n, min), max);
     }
 
-    function phaseByAge(age) {
+    function daysInMonth(y, m) {
+        return new Date(y, m, 0).getDate();
+    } // m: 1..12
+
+    function phaseByAge(age) { // age: 整年
         if (age <= HEALTHY_END) return 'healthy';
         if (age <= FRAIL_END) return 'frail';
         return 'disabled';
@@ -585,23 +627,18 @@
 
     function updateHeader(birthYear) {
         const age = CUR_YEAR - birthYear;
-
         const lifeLeft = clamp(MAX_AGE - age, 0, MAX_AGE);
         const agePct = (age <= 0) ? 0 : (age / MAX_AGE) * 100;
-
         const FRAIL_START = HEALTHY_END + 1; // 60
         const DISABLED_START = FRAIL_END + 1; // 70
 
-        // 健康期已使用进度：当前年龄 / 60
-        const healthyUsedPct = clamp((age / FRAIL_START) * 100, 0, 100);
-        $('#healthyProgress')
-            .css('width', `${fmtPct(healthyUsedPct)}%`)
+        const healthyUsedPct = clamp((age / HEALTHY_END) * 100, 0, 100);
+        $('#healthyProgress').css('width', `${fmtPct(healthyUsedPct)}%`)
             .attr('aria-valuenow', fmtPct(healthyUsedPct))
             .attr('title', `健康期已使用 ${fmtPct(healthyUsedPct)}%`);
-
         $('#healthyUsedPctLabel').text(fmtPct(healthyUsedPct));
         const healthyNumerator = clamp(age, 0, FRAIL_START);
-        $('#healthyUsedFracLabel').text(`(${healthyNumerator}/${FRAIL_START})`);
+        $('#healthyUsedFracLabel').text(`(${healthyNumerator}/${HEALTHY_END})`);
 
         const toFrail = clamp(FRAIL_START - age, 0, MAX_AGE);
         const toDisabled = clamp(DISABLED_START - age, 0, MAX_AGE);
@@ -609,7 +646,6 @@
         $('#birthYearLabel').text(birthYear);
         $('#ageLabel').text(age);
         $('#lifeLeftLabel').text(lifeLeft);
-
         $('#lifeUsedPctLabel').text(fmtPct(agePct));
         $('#ageUsedFracLabel2').text(age);
         $('#maxAgeTailLabel').text(MAX_AGE);
@@ -621,14 +657,10 @@
         $('#disabledStartLabel').text(DISABLED_START);
         $('#ageFormulaLabel2').text(age);
 
-        //距离死亡...
         $('#maxAgeLabelDeath').text(MAX_AGE);
         $('#ageFormulaLabelDeath').text(age);
 
-        // 行内进度条
         $('#ageProgress').css('width', `${fmtPct(agePct)}%`);
-
-        // 右侧小字提示
         $('#currentYearLabel').text(CUR_YEAR);
         $('#currentAgeLabel').text(age);
     }
@@ -647,16 +679,14 @@
     // 生成整张表
     function buildTable(birthYear) {
         $tbody.empty();
-
         const HEALTH_ROWS = HEALTHY_END;              // 1..59
-        const FRAIL_ROWS = FRAIL_END - HEALTHY_END; // 60..69 -> 10
-        const DISAB_ROWS = MAX_AGE - FRAIL_END;     // 70..MAX_AGE
+        const FRAIL_ROWS = FRAIL_END - HEALTHY_END;  // 60..69 -> 10
+        const DISAB_ROWS = MAX_AGE - FRAIL_END;      // 70..MAX_AGE
 
         for (let age = 1; age <= MAX_AGE; age++) {
             const year = birthYear + (age - 1);
             const $tr = $('<tr></tr>');
 
-            // 阶段列（首行插入）
             if (age === 1) {
                 $tr.append(`<td class="phase-cell align-middle text-center" rowspan="${HEALTH_ROWS}">健康期(1~${HEALTHY_END})</td>`);
             } else if (age === HEALTHY_END + 1) {
@@ -665,10 +695,8 @@
                 $tr.append(`<td class="phase-cell align-middle text-center" rowspan="${DISAB_ROWS}">失能期(${FRAIL_END + 1}~${MAX_AGE})</td>`);
             }
 
-            // 年份 / 年龄列
             $tr.append(`<td class="year-age text-center font-weight-500">${year} / ${age}</td>`);
 
-            // 12 个月
             for (let m = 1; m <= 12; m++) {
                 const cls = monthsClassFor(year, m, age);
                 const isNow = (year === CUR_YEAR && m === CUR_MONTH);
@@ -677,10 +705,8 @@
                 const title = isNow
                     ? `当前月 ${year}-${mm}｜做一件重要的小事`
                     : `${year}-${mm}｜${label}｜${tipForPhase(cls)}`;
-
                 $tr.append(`<td class="month-cell ${cls} ${isNow ? 'now' : ''}" title="${title}" aria-label="${title}">&nbsp;</td>`);
             }
-
             $tbody.append($tr);
         }
     }
@@ -706,6 +732,7 @@
         updateHeader(birthYear);
         buildTable(birthYear);
         setLegendBySystemDate(birthYear);
+        drawLifeRing(birthYear); // <<< 新增：同步重绘圆环
     }
 
     function commitGender() {
@@ -714,16 +741,15 @@
         const by = parseInt($('#birthYearInput').val(), 10) || (CUR_YEAR - 35);
         applyMaxAge(maxAgeByGender(g), by);
 
-        // 更新性别按钮的激活态外观
+        // 更新性别按钮外观（保留你原有样式命名）
         $('.btn-radio .btn').removeClass('active btn-primary').addClass('btn-light');
         if (g === 'female') {
-            $('label[for="sexFemale"]').addClass('active btn-black').removeClass('btn-black');
+            $('label[for="sexFemale"]').addClass('active').removeClass('btn-light');
         } else {
-            $('label[for="sexMale"]').addClass('active btn-black').removeClass('btn-black');
+            $('label[for="sexMale"]').addClass('active').removeClass('btn-light');
         }
     }
 
-    // —— 出生年份提交 —— //
     function commitBirthYear(rawVal) {
         let by = parseInt(rawVal, 10);
         if (isNaN(by)) by = CUR_YEAR - 35;
@@ -733,10 +759,8 @@
         buildTable(by);
         setLegendBySystemDate(by);
         localStorage.setItem('life_birth_year', by);
-
-        // 依据当前性别应用 MAX_AGE 并刷新
         const g = genderFromUI();
-        applyMaxAge(maxAgeByGender(g), by);
+        applyMaxAge(maxAgeByGender(g), by); // 内部会重绘圆环
     }
 
     // —— 事件绑定 —— //
@@ -761,6 +785,160 @@
         commitGender();
     });
 
+    // ====== 新增：生命进度圆环绘制（原生 Canvas） ======
+    function drawLifeRing(birthYear) {
+        const canvas = document.getElementById('lifeRingCanvas');
+        if (!canvas) return;
+
+        // 自适应 DPR
+        const dpr = window.devicePixelRatio || 1;
+        const parentW = canvas.clientWidth || 600;
+        const targetH = 320; // 视觉高度（可按需改）
+        canvas.width = Math.floor(parentW * dpr);
+        canvas.height = Math.floor(targetH * dpr);
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // 方便用 CSS 像素作图
+
+        const W = parentW, H = targetH;
+        const cx = W / 2, cy = H / 2 + 6; // 稍微下移居中
+        const outerR = Math.min(W, H) * 0.42;   // 外半径
+        const innerR = outerR - 32;            // 环宽 ~32px
+        const tickLen = 8;                     // 刻度长度
+        const startDeg = -90 + 6;              // 以“01分刻度”为起点：顶上 +6°
+        const startRad = startDeg * Math.PI / 180;
+        const TAU = Math.PI * 2;
+
+        // 颜色取与你表格一致的风格
+        const COLOR_BG = '#ffffff';
+        const COLOR_RING_BORDER = '#e9ecef';
+        const COLOR_HEALTHY = '#f8f9fa';   // 表格healthy为白底+点阵，近似用浅灰
+        const COLOR_FRAIL = '#fff3cd';
+        const COLOR_DISABLED = '#fdecec';
+        const COLOR_PAST = 'rgba(173,181,189,.55)'; // 已过去阴影
+        const COLOR_TICK = '#6c757d';
+        const COLOR_TICK_PAST = '#adb5bd';
+        const COLOR_POINTER = '#343a40';
+        const COLOR_TEXT = '#495057';
+
+        // 年龄分数（包含月、日）
+        const ageFrac = clamp((CUR_YEAR - birthYear) , 0, MAX_AGE); // [0, MAX_AGE]
+        const ageInt = Math.floor(ageFrac);
+        const phaseNow = phaseLabelByAge(Math.max(1, ageInt));
+
+        // 将“年龄值”映射到角度
+        const angOf = (val) => startRad + TAU * (val / MAX_AGE);
+
+        // 快速绘制圆环扇形段
+        function drawRingSlice(a0, a1, fill) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, outerR, a0, a1, false);
+            ctx.arc(cx, cy, innerR, a1, a0, true);
+            ctx.closePath();
+            ctx.fillStyle = fill;
+            ctx.fill();
+            // 细边
+            ctx.strokeStyle = COLOR_RING_BORDER;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+
+        // 背景
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = COLOR_BG;
+        ctx.fillRect(0, 0, W, H);
+
+        // 计算三个阶段对应角度
+        const aHealthy0 = angOf(0);
+        const aHealthy1 = angOf(HEALTHY_END);
+        const aFrail0 = angOf(HEALTHY_END);
+        const aFrail1 = angOf(FRAIL_END);
+        const aDisab0 = angOf(FRAIL_END);
+        const aDisab1 = angOf(MAX_AGE);
+
+        // 画分段底色（与表格一致）
+        drawRingSlice(aHealthy0, aHealthy1, COLOR_HEALTHY);
+        drawRingSlice(aFrail0, aFrail1, COLOR_FRAIL);
+        drawRingSlice(aDisab0, aDisab1, COLOR_DISABLED);
+
+        // 叠加“已过去”阴影（从起点到当前指针角）
+        const aPast1 = angOf(ageFrac);
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.arc(cx, cy, outerR, startRad, aPast1, false);
+        ctx.arc(cx, cy, innerR, aPast1, startRad, true);
+        ctx.closePath();
+        ctx.fillStyle = COLOR_PAST;
+        ctx.fill();
+
+        // 刻度（1 ~ MAX_AGE），已过去灰、当前年加粗、未来深色
+        ctx.lineCap = 'round';
+        for (let i = 1; i <= MAX_AGE; i++) {
+            const a = angOf(i);
+            const cos = Math.cos(a), sin = Math.sin(a);
+            const r0 = outerR - 2;
+            const r1 = r0 - tickLen;
+
+            ctx.beginPath();
+            ctx.moveTo(cx + r0 * cos, cy + r0 * sin);
+            ctx.lineTo(cx + r1 * cos, cy + r1 * sin);
+
+            if (i <= ageInt) ctx.strokeStyle = COLOR_TICK_PAST;
+            else if (i === ageInt + 1) ctx.strokeStyle = COLOR_POINTER; // 当前所在的“这个年”
+            else ctx.strokeStyle = COLOR_TICK;
+
+            ctx.lineWidth = (i % 5 === 0) ? 2 : 1.2; // 每5年加粗
+            ctx.stroke();
+        }
+
+        // 指针（指向当前“年+月+日”的精确角度）
+        const aPointer = aPast1;
+        const cosP = Math.cos(aPointer), sinP = Math.sin(aPointer);
+        const pointerR0 = innerR - 10;
+        const pointerR1 = outerR + 10;
+        ctx.beginPath();
+        ctx.moveTo(cx + pointerR0 * cosP, cy + pointerR0 * sinP);
+        ctx.lineTo(cx + pointerR1 * cosP, cy + pointerR1 * sinP);
+        ctx.strokeStyle = COLOR_POINTER;
+        ctx.lineWidth = 2.2;
+        ctx.stroke();
+
+        // 指针端点小圆点
+        ctx.beginPath();
+        ctx.arc(cx + (outerR + 10) * cosP, cy + (outerR + 10) * sinP, 3.5, 0, TAU);
+        ctx.fillStyle = COLOR_POINTER;
+        ctx.fill();
+
+        // 段内文字（位于每段中心角、环带中线半径）
+        ctx.fillStyle = COLOR_TEXT;
+        ctx.font = '600 14px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const midR = (innerR + outerR) / 2;
+
+        function labelAt(midFrom, midTo, text) {
+            const am = (midFrom + midTo) / 2;
+            const x = cx + midR * Math.cos(am);
+            const y = cy + midR * Math.sin(am);
+            // 文字描边让浅底也清晰
+            ctx.fillText(text, x, y);
+        }
+
+        labelAt(aHealthy0, aHealthy1, `健康期 1–${HEALTHY_END}`);
+        labelAt(aFrail0, aFrail1, `衰弱期 ${HEALTHY_END + 1}–${FRAIL_END}`);
+        labelAt(aDisab0, aDisab1, `失能期 ${FRAIL_END + 1}–${MAX_AGE}`);
+
+        // 圆心提示
+        const usedPct = (ageFrac / HEALTHY_END) * 100;
+        ctx.font = '700 18px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial';
+        ctx.fillText(`${phaseNow}`, cx, cy - 4);
+        ctx.font = '12px system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial';
+        ctx.fillText(`已用 ${usedPct.toFixed(2)}%`, cx, cy + 14);
+
+        // 页面右上角小元信息
+        const ym = `${CUR_YEAR}-${String(CUR_MONTH).padStart(2, '0')}`;
+        $('#ringMeta').text(`当前月：${ym}｜总刻度：${MAX_AGE}｜阶段：${phaseNow}`);
+    }
+
     // ====== 初始渲染 ======
     (function init() {
         const savedBirth = parseInt(localStorage.getItem('life_birth_year'), 10);
@@ -774,14 +952,19 @@
             $('#sexMale').prop('checked', true);
         }
 
-        // 首次渲染 + 按性别应用 MAX_AGE
         updateHeader(defaultBirth);
         buildTable(defaultBirth);
         setLegendBySystemDate(defaultBirth);
-        applyMaxAge(maxAgeByGender(savedGender), defaultBirth);
+        applyMaxAge(maxAgeByGender(savedGender), defaultBirth); // 内部会首次 drawLifeRing
 
         // 初始化性别按钮外观
         commitGender();
+
+        // 自适应窗口变化：重绘圆环
+        window.addEventListener('resize', () => {
+            const by = parseInt($('#birthYearInput').val(), 10) || (CUR_YEAR - 35);
+            drawLifeRing(by);
+        });
     })();
 </script>
 </body>
