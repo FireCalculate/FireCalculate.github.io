@@ -508,10 +508,6 @@
     <!-- ====== 新增：生命进度圆环（在“生命概览”后、表格前） ====== -->
     <div class="ring-card shadow-sm p-3 mb-3">
         <div class="d-flex align-items-baseline justify-content-between">
-            <div>
-                <div class="ring-title">生命进度圆环</div>
-                <div class="ring-subtle">底色分段与下方表格一致；指针指向“当前月”，灰色阴影为已过去时段</div>
-            </div>
             <small class="ring-subtle" id="ringMeta">—</small>
         </div>
         <div class="ring-canvas-wrap mt-2">
@@ -936,7 +932,7 @@
 
         // 页面右上角小元信息
         const ym = `${CUR_YEAR}-${String(CUR_MONTH).padStart(2, '0')}`;
-        $('#ringMeta').text(`当前月：${ym}｜总刻度：${MAX_AGE}｜阶段：${phaseNow}`);
+        $('#ringMeta').text(`当前月：${ym}｜阶段：${phaseNow}｜总年数：${MAX_AGE}`);
     }
 
     // ====== 初始渲染 ======
