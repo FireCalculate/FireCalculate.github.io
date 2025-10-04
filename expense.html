@@ -100,6 +100,11 @@
         .btn-ops-group .btn {
             margin: 0 .15rem;
         }
+
+        /* 列隐藏统一样式 */
+        .col-hidden {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -131,6 +136,28 @@
                 <button id="exportCSV" class="btn btn-black">⤓ 导出 CSV</button>
             </div>
         </div>
+
+        <!-- 显示列控制 -->
+        <div class="mt-2">
+            <div class="small text-muted mb-1">显示列（可勾选/取消，支持持久化记忆）</div>
+            <div class="d-flex flex-wrap align-items-center">
+                <label class="mr-3 mb-2">
+                    <input type="checkbox" id="toggleDaily" checked> 日均
+                </label>
+                <label class="mr-3 mb-2">
+                    <input type="checkbox" id="toggleMonthly" checked> 月均
+                </label>
+                <label class="mr-3 mb-2">
+                    <input type="checkbox" id="toggleYearly" checked> 年均
+                </label>
+                <label class="mr-3 mb-2">
+                    <input type="checkbox" id="toggle30y" checked> 30年
+                </label>
+                <label class="mr-3 mb-2 d-flex align-items-center">
+                    <input type="checkbox" id="toggleCustom" checked> <span class="ml-1" id="yearsLabel2">自定义</span>年
+                </label>
+            </div>
+        </div>
     </div>
 
     <!-- 表格 -->
@@ -142,11 +169,11 @@
                 <th style="min-width:180px;">项目</th>
                 <th style="min-width:100px;">周期</th>
                 <th class="num">支出¥</th>
-                <th class="num">日均¥</th>
-                <th class="num">月均¥</th>
-                <th class="num">年均¥</th>
-                <th class="num">30年¥</th>
-                <th class="num">
+                <th class="num th-daily">日均¥</th>
+                <th class="num th-monthly">月均¥</th>
+                <th class="num th-yearly">年均¥</th>
+                <th class="num th-30y">30年¥</th>
+                <th class="num th-custom">
                     <div class="d-flex align-items-center justify-content-center">
                         <select id="yearsSelect" class="custom-select custom-select-sm w-auto"></select>
                         <span class="ml-1">¥</span>
@@ -160,11 +187,11 @@
             <tr class="tfoot-total">
                 <td colspan="3" class="text-right">合计</td>
                 <td class="num" id="sumD">0.00</td>
-                <td class="num" id="sumE">0.00</td>
-                <td class="num" id="sumF">0.00</td>
-                <td class="num" id="sumG">0.00</td>
-                <td class="num" id="sumH">0.00</td>
-                <td class="num" id="sumI">0.00</td>
+                <td class="num tfoot-daily" id="sumE">0.00</td>
+                <td class="num tfoot-monthly" id="sumF">0.00</td>
+                <td class="num tfoot-yearly" id="sumG">0.00</td>
+                <td class="num tfoot-30y" id="sumH">0.00</td>
+                <td class="num tfoot-custom" id="sumI">0.00</td>
                 <td></td>
             </tr>
             </tfoot>
@@ -203,6 +230,18 @@
     const YEARS_DEFAULT = 40;
     const LS_KEY = 'expense_rows_v1';
     const LS_YEARS_KEY = 'expense_years_v1';
+
+    // 列显示状态持久化键
+    const LS_COLS_KEY = 'expense_cols_visibility_v1';
+    // 列选择器定义
+    const COLS = {
+        daily: {th: '.th-daily', tds: 'td.cell-daily', tf: 'td.tfoot-daily'},
+        monthly: {th: '.th-monthly', tds: 'td.cell-monthly', tf: 'td.tfoot-monthly'},
+        yearly: {th: '.th-yearly', tds: 'td.cell-yearly', tf: 'td.tfoot-yearly'},
+        y30: {th: '.th-30y', tds: 'td.cell-30y', tf: 'td.tfoot-30y'},
+        custom: {th: '.th-custom', tds: 'td.cell-custom-y', tf: 'td.tfoot-custom'}
+    };
+
     let selectedYears = YEARS_DEFAULT;
 
     /* 示例模板（保持不变，可自由编辑） */
@@ -433,6 +472,7 @@
 
     function updateYearsUI() {
         $('#yearsLabel').text(String(selectedYears));
+        $('#yearsLabel2').text(String(selectedYears));
     }
 
     /* ===== CSV 导入/导出 ===== */
@@ -574,6 +614,61 @@
         });
     }
 
+    /* ===== 列显示控制 ===== */
+    function loadColsVisibility() {
+        try {
+            const json = localStorage.getItem(LS_COLS_KEY);
+            if (!json) return {daily: true, monthly: true, yearly: true, y30: true, custom: true};
+            const obj = JSON.parse(json);
+            return {
+                daily: obj.daily !== false,
+                monthly: obj.monthly !== false,
+                yearly: obj.yearly !== false,
+                y30: obj.y30 !== false,
+                custom: obj.custom !== false
+            };
+        } catch (_) {
+            return {daily: true, monthly: true, yearly: true, y30: true, custom: true};
+        }
+    }
+
+    function saveColsVisibility(state) {
+        localStorage.setItem(LS_COLS_KEY, JSON.stringify(state));
+    }
+
+    function applyColsVisibility(state) {
+        // 逐列处理：显示=移除隐藏类；隐藏=添加隐藏类
+        Object.entries(COLS).forEach(([key, sel]) => {
+            const show = !!state[key];
+            $(sel.th).toggleClass('col-hidden', !show);
+            $(sel.tds).toggleClass('col-hidden', !show);
+            $(sel.tf).toggleClass('col-hidden', !show);
+        });
+    }
+
+    function bindColsToggles(state) {
+        const map = {
+            daily: '#toggleDaily',
+            monthly: '#toggleMonthly',
+            yearly: '#toggleYearly',
+            y30: '#toggle30y',
+            custom: '#toggleCustom'
+        };
+        // 初始同步勾选状态
+        Object.entries(map).forEach(([k, sel]) => {
+            const el = document.querySelector(sel);
+            if (el) el.checked = !!state[k];
+        });
+        // 绑定事件
+        Object.entries(map).forEach(([k, sel]) => {
+            $(sel).on('change', function () {
+                state[k] = this.checked;
+                saveColsVisibility(state);
+                applyColsVisibility(state);
+            });
+        });
+    }
+
     /* ===== 初始化 ===== */
     function addRow(data) {
         $('#tbody').append(buildRow(data));
@@ -585,6 +680,9 @@
         rows.forEach(r => addRow(r));
         computeTotals();
         updateMoveButtons();
+
+        // 应用列隐藏到新渲染的行
+        applyColsVisibility(loadColsVisibility());
     }
 
     $(function () {
@@ -600,6 +698,8 @@
         $('#addRow').on('click', () => {
             addRow({cat: "其它", name: "", period: "每月", amount: 0});
             saveToLocalStorage();
+            // 新增行也要应用列隐藏
+            applyColsVisibility(loadColsVisibility());
         });
         $('#restoreTemplate').on('click', () => {
             mountRows(TEMPLATE_ROWS);
@@ -613,6 +713,11 @@
             updateMoveButtons();
         });
         $('#exportCSV').on('click', exportCSV);
+
+        // 列显示控制：加载状态、绑定事件、首次应用
+        const colState = loadColsVisibility();
+        bindColsToggles(colState);
+        applyColsVisibility(colState);
     });
 </script>
 </body>
