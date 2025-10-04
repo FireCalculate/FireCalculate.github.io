@@ -105,7 +105,7 @@
                 <div class="d-flex flex-column">
                     <div class="input-group">
                         <input type="number" id="startYear" class="form-control form-control-sm text-center" step="1"
-                               placeholder="年龄" readonly>
+                               placeholder="年龄" min="1" max="120">
                         <div class="input-group-append">
                             <button class="btn btn-outline-secondary btn-sm" type="button" onclick="resetStartYear()">
                                 ×
@@ -206,23 +206,29 @@
     principalEle.addEventListener("input", function () {
         updatePrincipalDisplay();
         updateLocalStorage();
+        calculateInterest();
     });
     annualInterestRateEle.addEventListener("input", function () {
         updateLocalStorage();
+        calculateInterest();
     });
     stableIncomeEle.addEventListener("input", function () {
         updateStableIncomeDisplay();
         updateLocalStorage();
+        calculateInterest();
     });
     annualExpensesEle.addEventListener("input", function () {
         updateMonthlyExpensesDisplay();
         updateLocalStorage();
+        calculateInterest();
     });
     inflationRateEle.addEventListener("input", function () {
         updateLocalStorage();
+        calculateInterest();
     });
     startYearEle.addEventListener("input", function () {
         updateLocalStorage();
+        calculateInterest(true);
     });
 
     startYearEle.value = currentSystemYear;
