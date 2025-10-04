@@ -102,7 +102,7 @@
 <div class="container-fluid py-4 px-3">
     <div class="d-flex align-items-center mb-3">
         <h2 class="page-title mb-0">消费盘点</h2>
-        <div class="ml-3 tag">日均 / 月均 / 年均 / 30年 / <span id="yearsLabel">43</span>年</div>
+        <div class="ml-3 tag">日均 / 月均 / 年均 / 30年 / <span id="yearsLabel">--</span>年</div>
     </div>
 
     <!-- 控件区 -->
@@ -196,7 +196,7 @@
     };
     const CATEGORY_OPTIONS = ["饮食", "娱乐", "电子", "生活", "家电", "交通", "旅游", "其它"];
 
-    const YEARS_DEFAULT = 43;
+    const YEARS_DEFAULT = 40;
     const LS_KEY = 'expense_rows_v1';
     const LS_YEARS_KEY = 'expense_years_v1';
     let selectedYears = YEARS_DEFAULT;
@@ -267,7 +267,7 @@
         const $tdF = $('<td class="num cell-monthly">0.00</td>');
         const $tdG = $('<td class="num cell-yearly">0.00</td>');
         const $tdH = $('<td class="num cell-30y">0.00</td>');
-        const $tdI = $('<td class="num cell-43y">0.00</td>');
+        const $tdI = $('<td class="num cell-custom-y">0.00</td>');
         const $tdOps = $('<td class="text-center"></td>').append('<button class="btn btn-sm btn-outline-danger btn-del">删除</button>');
 
         $tr.append($tdCat, $tdName, $tdPer, $tdAmt, $tdE, $tdF, $tdG, $tdH, $tdI, $tdOps);
@@ -297,7 +297,7 @@
         $tr.find('.cell-monthly').text(fmt(F));
         $tr.find('.cell-yearly').text(fmt(G));
         $tr.find('.cell-30y').text(fmt(H));
-        $tr.find('.cell-43y').text(fmt(I));
+        $tr.find('.cell-custom-y').text(fmt(I));
     }
 
     function computeTotals() {
@@ -309,7 +309,7 @@
             const f = parseNum($tr.find('.cell-monthly').text().replace(/,/g, ''));
             const g = parseNum($tr.find('.cell-yearly').text().replace(/,/g, ''));
             const h = parseNum($tr.find('.cell-30y').text().replace(/,/g, ''));
-            const i = parseNum($tr.find('.cell-43y').text().replace(/,/g, ''));
+            const i = parseNum($tr.find('.cell-custom-y').text().replace(/,/g, ''));
             sumD += amount;
             sumE += e;
             sumF += f;
