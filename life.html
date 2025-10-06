@@ -806,8 +806,9 @@
         const outerR = Math.min(W, H) * 0.42;   // 外半径
         const innerR = outerR - 32;            // 环宽 ~32px
         const tickLen = 8;                     // 刻度长度
-        const startDeg = -90 + 6;              // 以“01分刻度”为起点：顶上 +6°
-        const startRad = startDeg * Math.PI / 180;
+        const startDeg = -90 + 6; // 顶部+6°
+        const SHIFT_TICKS = -1;   // 负数=逆时针，正数=顺时针；这里逆时针平移1岁
+        const startRad = (startDeg * Math.PI / 180) + (2 * Math.PI * (SHIFT_TICKS / MAX_AGE));
         const TAU = Math.PI * 2;
 
         // 颜色取与你表格一致的风格
