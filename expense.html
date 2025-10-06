@@ -381,7 +381,7 @@
         const $cat = buildSelect(CATEGORY_OPTIONS, data.cat).addClass('input-cat');
         const $name = $(`<input type="text" class="form-control form-control-sm input-name" placeholder="">`).val(data.name);
         const $period = buildSelect(PERIOD_OPTIONS, data.period).addClass('select-period');
-        const $amount = $(`<input type="number" class="form-control form-control-sm input-amount num" step="0.01" min="0">`).val(data.amount);
+        const $amount = $(`<input type="number" class="form-control form-control-sm input-amount num" step="1" min="0">`).val(data.amount);
 
         const $tdCat = $('<td></td>').append($cat);
         const $tdName = $('<td></td>').append($name);
