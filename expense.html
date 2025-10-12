@@ -85,11 +85,7 @@
             font-size: .8rem;
         }
 
-        .table-responsive {
-            width: 100%;
-        }
-
-        .table {
+        .table-responsive, .table {
             width: 100%;
         }
 
@@ -105,10 +101,27 @@
             display: none !important;
         }
 
-        /* ====== 图表区域样式（与现有风格统一） ====== */
+        /* ====== 图表区域样式（与现有风格统一，增强美化） ====== */
         .chart-wrap {
             position: relative;
             min-height: 260px;
+        }
+
+        .chart-empty {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: .95rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px dashed #e9ecef;
+            border-radius: .75rem;
+        }
+
+        .chart-empty.show {
+            display: flex;
         }
 
         .legend {
@@ -121,9 +134,20 @@
             justify-content: space-between;
             border: 1px solid #e9ecef;
             border-radius: .5rem;
-            padding: .4rem .6rem;
+            padding: .5rem .65rem;
             background: #fff;
             margin-bottom: .5rem;
+            transition: all .15s ease;
+            cursor: pointer;
+        }
+
+        .legend .legend-item:hover {
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .06);
+            transform: translateY(-1px);
+        }
+
+        .legend .legend-item.off {
+            opacity: .45;
         }
 
         .legend .legend-left {
@@ -137,6 +161,7 @@
             height: 14px;
             border: 1px solid #ced4da;
             margin-right: 8px;
+            border-radius: 3px;
         }
 
         .legend .legend-label {
@@ -160,23 +185,6 @@
             color: #6c757d;
             margin-left: 6px;
         }
-
-        .chart-empty {
-            position: absolute;
-            inset: 0;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            color: #6c757d;
-            font-size: .95rem;
-            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
-            border: 1px dashed #e9ecef;
-            border-radius: .75rem;
-        }
-
-        .chart-empty.show {
-            display: flex;
-        }
     </style>
 </head>
 <body>
@@ -186,7 +194,7 @@
         <div class="ml-3 tag">日均 / 月均 / 年均 / 30年 / <span id="yearsLabel">--</span>年</div>
     </div>
 
-    <!-- ===== 新增：类目消费占比（圆环图） ===== -->
+    <!-- ===== 优化美化后的类目消费占比（圆环图） ===== -->
     <div class="card-soft p-3 mb-3">
         <div class="d-flex align-items-center justify-content-between mb-2">
             <div class="d-flex align-items-center">
@@ -239,8 +247,9 @@
                 <label class="mr-3 mb-2"><input type="checkbox" id="toggleMonthly" checked> 月均</label>
                 <label class="mr-3 mb-2"><input type="checkbox" id="toggleYearly" checked> 年均</label>
                 <label class="mr-3 mb-2"><input type="checkbox" id="toggle30y" checked> 30年</label>
-                <label class="mr-3 mb-2 d-flex align-items-center"><input type="checkbox" id="toggleCustom" checked>
-                    <span class="ml-1" id="yearsLabel2">自定义</span>年</label>
+                <label class="mr-3 mb-2 d-flex align-items-center">
+                    <input type="checkbox" id="toggleCustom" checked><span class="ml-1" id="yearsLabel2">自定义</span>年
+                </label>
             </div>
         </div>
     </div>
@@ -284,8 +293,7 @@
     </div>
 
     <div class="small text-muted mt-2">
-        周期天数映射：每天=1， 每周=7， 每月=30， 每年=365，
-        每2年=730...
+        周期天数映射：每天=1， 每周=7， 每月=30， 每年=365， 每2年=730...
     </div>
 </div>
 
@@ -293,19 +301,16 @@
     <a href="index.html">💰 FIRE计算器</a>
     <a href="life.html">⏰ 生命倒计时</a>
     <a href="expense.html">🧾 消费盘点</a>
-    <!--<a href="clock.html">⏰ FIRE时钟</a>-->
     <a href="rental.html">🏠 房产租售比</a>
 </div>
 
-<!-- 引入 Chart.js（与计算器页一致的路径） -->
 <script src="dist/chart.min.js"></script>
 
 <script>
     /* ===== 配置 ===== */
     const PERIOD_OPTIONS = [
         "每天", "每周", "每月", "每年",
-        "每2年", "每3年", "每4年", "每5年",
-        "每6年", "每7年", "每8年", "每9年", "每10年"
+        "每2年", "每3年", "每4年", "每5年", "每6年", "每7年", "每8年", "每9年", "每10年"
     ];
     const PERIOD_TO_DAYS = {
         "每天": 1, "每周": 7, "每月": 30, "每年": 365,
@@ -317,9 +322,8 @@
     const YEARS_DEFAULT = 40;
     const LS_KEY = 'expense_rows_v1';
     const LS_YEARS_KEY = 'expense_years_v1';
-
-    // 列显示状态持久化键
     const LS_COLS_KEY = 'expense_cols_visibility_v1';
+
     const COLS = {
         daily: {th: '.th-daily', tds: 'td.cell-daily', tf: 'td.tfoot-daily'},
         monthly: {th: '.th-monthly', tds: 'td.cell-monthly', tf: 'td.tfoot-monthly'},
@@ -558,6 +562,7 @@
         $('#yearsLabel2').text(String(selectedYears));
     }
 
+    /* ===== CSV ===== */
     function parseCSVLine(line) {
         const out = [];
         let cur = '', inQuotes = false;
@@ -611,7 +616,8 @@
             $('#sumF').text().replace(/,/g, ''),
             $('#sumG').text().replace(/,/g, ''),
             $('#sumH').text().replace(/,/g, ''),
-            $('#sumI').text().replace(/,/g, '')];
+            $('#sumI').text().replace(/,/g, '')
+        ];
         lines.push(sum.join(','));
 
         const blob = new Blob(['\ufeff' + lines.join('\n')], {type: 'text/csv;charset=utf-8;'});
@@ -700,11 +706,8 @@
             if (!json) return {daily: true, monthly: true, yearly: true, y30: true, custom: true};
             const obj = JSON.parse(json);
             return {
-                daily: obj.daily !== false,
-                monthly: obj.monthly !== false,
-                yearly: obj.yearly !== false,
-                y30: obj.y30 !== false,
-                custom: obj.custom !== false
+                daily: obj.daily !== false, monthly: obj.monthly !== false,
+                yearly: obj.yearly !== false, y30: obj.y30 !== false, custom: obj.custom !== false
             };
         } catch (_) {
             return {daily: true, monthly: true, yearly: true, y30: true, custom: true};
@@ -742,8 +745,19 @@
         });
     }
 
-    /* ====== 类目汇总 & 图表 ====== */
-    const PALETTE = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#64748b'];
+    /* ====== 类目汇总 & 图表（优化美化） ====== */
+    // 颜色生成（更平滑、区分度高）
+    function genPalette(n) {
+        const arr = [];
+        for (let i = 0; i < n; i++) {
+            const h = (i * (360 / Math.max(6, n))) % 360;
+            const s = 70;
+            const l = 55;
+            arr.push(`hsl(${h} ${s}% ${l}%)`);
+        }
+        return arr;
+    }
+
     let categoryChart = null;
 
     function getAnnualForRow($tr) {
@@ -766,15 +780,87 @@
         return map;
     }
 
-    function renderLegend(labels, colors, values, total) {
+    // 中心文本插件（显示“年均合计”或悬浮分类金额）
+    const centerTextPlugin = {
+        id: 'centerText',
+        afterDraw(chart, args, opts) {
+            const {ctx, chartArea, _active} = chart;
+            if (!chartArea) return;
+            const labels = chart.data.labels || [];
+            const data = (chart.data.datasets[0] && chart.data.datasets[0].data) || [];
+
+            // 可见总额
+            let totalVisible = 0;
+            data.forEach((v, i) => {
+                if (chart.getDataVisibility(i)) totalVisible += +v;
+            });
+
+            // 悬浮状态
+            const hoverIndex = chart.$center?.hoverIndex ?? null;
+            const showHover = hoverIndex != null && chart.getDataVisibility(hoverIndex);
+            const amount = showHover ? data[hoverIndex] : totalVisible;
+
+            const centerX = (chartArea.left + chartArea.right) / 2;
+            const centerY = (chartArea.top + chartArea.bottom) / 2;
+
+            // 动态字号（随内半径）
+            const meta = chart.getDatasetMeta(0);
+            const inner = meta?.data?.[0]?.innerRadius || 80;
+            const big = Math.max(16, Math.min(28, inner / 2.6));
+            const small = Math.max(10, Math.min(14, inner / 6));
+
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#0f172a';
+
+            // 第一行：金额
+            ctx.font = `600 ${big}px ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue"`;
+            const amtStr = '¥ ' + Number(amount || 0).toLocaleString('zh-CN', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            });
+            ctx.fillText(amtStr, centerX, centerY - small);
+
+            // 第二行：说明
+            ctx.fillStyle = '#6b7280';
+            ctx.font = `500 ${small}px ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue"`;
+            if (showHover) {
+                let visibleTotal = 0;
+                data.forEach((v, i) => {
+                    if (chart.getDataVisibility(i)) visibleTotal += +v;
+                });
+                const pct = visibleTotal > 0 ? (amount / visibleTotal * 100) : 0;
+                const line2 = `${labels[hoverIndex] || ''} · ${pct.toFixed(1)}%`;
+                ctx.fillText(line2, centerX, centerY + small * 1.4);
+            } else {
+                ctx.fillText('年均合计', centerX, centerY + small * 1.4);
+            }
+            ctx.restore();
+        }
+    };
+    Chart.register(centerTextPlugin);
+
+    // 构建/刷新 Legend（可点击隐藏/显示分类）
+    function buildLegend(chart) {
         const $legend = $('#categoryLegend');
         $legend.empty();
-        if (total <= 0 || labels.length === 0) return;
+        const labels = chart.data.labels || [];
+        const data = (chart.data.datasets[0] && chart.data.datasets[0].data) || [];
+        const colors = (chart.data.datasets[0] && chart.data.datasets[0].backgroundColor) || [];
+
+        let visibleTotal = 0;
+        data.forEach((v, i) => {
+            if (chart.getDataVisibility(i)) visibleTotal += +v;
+        });
+
         labels.forEach((lbl, idx) => {
-            const val = values[idx] || 0;
-            const pct = total > 0 ? (val / total * 100) : 0;
+            const visible = chart.getDataVisibility(idx);
+            const val = data[idx] || 0;
+            const pct = visibleTotal > 0 ? (val / visibleTotal * 100) : 0;
+
             const $item = $(`
-                <div class="legend-item">
+                <div class="legend-item ${visible ? '' : 'off'}" data-idx="${idx}">
                     <div class="legend-left">
                         <span class="legend-box" style="background:${colors[idx]}"></span>
                         <span class="legend-label">${lbl}</span>
@@ -784,27 +870,39 @@
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             })}</span>
-                        <span class="legend-pct">(${pct.toFixed(1)}%)</span>
+                        <span class="legend-pct">(${visible ? pct.toFixed(1) : 0.0}%)</span>
                     </div>
                 </div>
             `);
+            $item.on('click', function () {
+                const i = Number($(this).attr('data-idx'));
+                chart.toggleDataVisibility(i);
+                chart.update();
+                // 重建 legend & 更新摘要
+                buildLegend(chart);
+                updateChartSummaryFromChart(chart);
+            });
             $legend.append($item);
         });
     }
 
-    function updateCategoryChart() {
-        const totals = computeCategoryTotals();
+    function updateChartSummaryFromChart(chart) {
+        const data = (chart.data.datasets[0] && chart.data.datasets[0].data) || [];
+        let visibleTotal = 0;
+        data.forEach((v, i) => {
+            if (chart.getDataVisibility(i)) visibleTotal += +v;
+        });
+        document.getElementById('chartSummary').textContent =
+            '年均合计：¥ ' + Number(visibleTotal || 0).toLocaleString('zh-CN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+    }
 
-        // ===== 关键改动：按“年均金额”从大到小排序 =====
-        const entries = Array.from(totals.entries())
-            .filter(([_, v]) => v > 0.000001)
-            .sort((a, b) => b[1] - a[1]);   // DESC by value
-
-        const labels = entries.map(([k]) => k);
-        const data = entries.map(([_, v]) => v);
-
+    function renderOrUpdateChart(labels, data) {
         const total = data.reduce((a, b) => a + b, 0);
         const emptyEl = document.getElementById('chartEmpty');
+
         if (total <= 0) {
             if (categoryChart) {
                 categoryChart.destroy();
@@ -817,39 +915,88 @@
             emptyEl.classList.remove('show');
         }
 
-        // 颜色按排序后的顺序分配
-        const colors = labels.map((_, i) => PALETTE[i % PALETTE.length]);
+        const colors = genPalette(labels.length);
 
-        const ctx = document.getElementById('categoryChart').getContext('2d');
-        if (categoryChart) {
-            categoryChart.destroy();
-        }
-        categoryChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {labels, datasets: [{data, backgroundColor: colors, borderWidth: 0, hoverOffset: 6}]},
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '62%',
-                plugins: {
-                    legend: {display: false},
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => {
-                                const v = ctx.parsed || 0;
-                                const p = total > 0 ? (v / total * 100) : 0;
-                                return `${ctx.label}: ¥ ${v.toLocaleString('zh-CN', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                })}  (${p.toFixed(1)}%)`;
-                            }
+        if (!categoryChart) {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            categoryChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                        borderAlign: 'inner',
+                        hoverOffset: 8,
+                        spacing: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '62%',
+                    layout: {padding: {top: 8, bottom: 8, left: 8, right: 8}},
+                    animation: {duration: 800, easing: 'easeOutQuart'},
+                    elements: {arc: {borderRadius: 8}},
+                    plugins: {
+                        legend: {display: false},
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const v = ctx.parsed || 0;
+                                    const all = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                    const visAll = ctx.chart.data.datasets[0].data
+                                        .reduce((acc, val, i) => acc + (ctx.chart.getDataVisibility(i) ? +val : 0), 0);
+                                    const pct = visAll > 0 ? (v / visAll * 100) : (all > 0 ? (v / all * 100) : 0);
+                                    return `${ctx.label}: ¥ ${v.toLocaleString('zh-CN', {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    })}  (${pct.toFixed(1)}%)`;
+                                }
+                            },
+                            backgroundColor: 'rgba(17,24,39,.95)',
+                            titleColor: '#fff',
+                            bodyColor: '#e5e7eb',
+                            padding: 10,
+                            displayColors: false
                         }
+                    },
+                    onHover: (evt, activeEls) => {
+                        if (!categoryChart) return;
+                        categoryChart.$center = categoryChart.$center || {};
+                        categoryChart.$center.hoverIndex = activeEls && activeEls[0] ? activeEls[0].index : null;
+                        categoryChart.draw();
                     }
                 }
-            }
-        });
+            });
+        } else {
+            // 更新数据而非销毁重建，避免闪烁
+            categoryChart.data.labels = labels;
+            categoryChart.data.datasets[0].data = data;
+            categoryChart.data.datasets[0].backgroundColor = colors;
+            // 重置所有切片为可见（当数据顺序变化时更直观）
+            labels.forEach((_, i) => {
+                if (!categoryChart.getDataVisibility(i)) categoryChart.toggleDataVisibility(i);
+            });
+            categoryChart.update();
+        }
 
-        renderLegend(labels, colors, data, total);
+        buildLegend(categoryChart);
+        updateChartSummaryFromChart(categoryChart);
+    }
+
+    function updateCategoryChart() {
+        const totals = computeCategoryTotals();
+        const entries = Array.from(totals.entries())
+            .filter(([_, v]) => v > 0.000001)
+            .sort((a, b) => b[1] - a[1]); // 年均金额降序
+
+        const labels = entries.map(([k]) => k);
+        const data = entries.map(([_, v]) => v);
+
+        renderOrUpdateChart(labels, data);
     }
 
     /* ===== 初始化 ===== */
@@ -865,6 +1012,31 @@
         updateMoveButtons();
         applyColsVisibility(loadColsVisibility());
         updateCategoryChart();
+    }
+
+    function bindImport() {
+        const fileInput = document.getElementById('importFile');
+        document.getElementById('importCSV').addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files && fileInput.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    importCSVFromText(String(e.target.result || ''));
+                } catch (err) {
+                    console.error(err);
+                    alert('导入失败：文件解析错误');
+                } finally {
+                    fileInput.value = '';
+                }
+            };
+            reader.onerror = () => {
+                alert('读取文件失败');
+                fileInput.value = '';
+            };
+            reader.readAsText(file, 'utf-8');
+        });
     }
 
     $(function () {
