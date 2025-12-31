@@ -542,7 +542,7 @@
     function initYearsSelect() {
         const $sel = $('#yearsSelect');
         $sel.empty();
-        for (let i = 1; i <= 100; i++) $sel.append(`<option value="${i}">${i}</option>`);
+        for (let i = 1; i <= 99; i++) $sel.append(`<option value="${i}">${i}</option>`);
         selectedYears = loadYearsFromLocalStorage();
         $sel.val(String(selectedYears));
         updateYearsUI();
