@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
+    <link rel="icon" href="dist/favicon/budget.ico"/>
+    <title>每日预算配额</title>
+    <link rel="stylesheet" href="dist/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="dist/css/c070423032508.css">
+    <link rel="stylesheet" type="text/css" href="dist/css/c220423282110.css">
+    <link rel="stylesheet" type="text/css" href="dist/css/c071026113123.css">
+</head>
+<body class="pb-5">
+<div class="container py-3">
+    <h2 class="text-center">每日预算配额</h2>
+
+    <!-- 可调项：出生日期 + 专项预算 -->
+    <div class="row">
+        <div class="col-md-6 form-group">
+            <label for="birthInput">出生日期:</label>
+            <div class="input-group">
+                <input type="date" id="birthInput" class="form-control form-control-lg" min="1900-01-01"
+                       max="2100-12-31"/>
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary btn-lg" type="button" id="resetBirth"
+                            title="恢复默认 1990-12-26">×
+                    </button>
+                </div>
+            </div>
+            <span class="text-muted budget-hint">默认 1990-12-26</span>
+        </div>
+        <div class="col-md-6 form-group">
+            <label for="fundInput">专项预算<span class="th-info">(万元)</span>:</label>
+            <div class="input-group">
+                <input type="number" id="fundInput" class="form-control form-control-lg" min="0" max="999999"
+                       step="0.1"/>
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary btn-lg" type="button" id="resetFund"
+                            title="恢复默认 166.2">×
+                    </button>
+                    <button class="btn btn-outline-secondary btn-lg" type="button" id="fundMinus" title="-1 万元">-
+                    </button>
+                    <button class="btn btn-outline-secondary btn-lg" type="button" id="fundPlus" title="+1 万元">+
+                    </button>
+                </div>
+            </div>
+            <span id="fundDisplay" class="text-muted budget-hint"></span>
+        </div>
+    </div>
+
+    <!-- 现在 -->
+    <div class="budget-card shadow-sm p-3 mb-4">
+        <div class="budget-clock" id="clock">—</div>
+        <ul class="list-unstyled mt-3 mb-2">
+            <li><span id="livedLabel">已经活了</span> <strong id="livedText">—</strong></li>
+        </ul>
+        <div class="d-flex align-items-center">
+            <div class="progress budget-progress flex-grow-1">
+                <div id="lifeBar" class="progress-bar bg-dark" role="progressbar" style="width:0%"></div>
+            </div>
+            <small class="subtle ml-3 text-nowrap">50 岁进度 <strong id="lifePct">—</strong></small>
+        </div>
+    </div>
+
+    <!-- 已活时长 -->
+    <div class="budget-section-head">
+        <h5 id="livedHead">已活时长</h5>
+        <small class="subtle" id="livedNote">—</small>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-bordered text-center budget-table">
+            <thead class="thead-dark">
+            <tr>
+                <th>总天数</th>
+                <th>总小时数</th>
+                <th>总分钟数</th>
+                <th>总秒数</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td id="ld">—</td>
+                <td id="lh">—</td>
+                <td id="lm">—</td>
+                <td id="ls">—</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 距离 50 岁 -->
+    <div class="budget-section-head">
+        <h5 id="cdHead">距离 50 岁</h5>
+        <small class="subtle" id="cdNote">—</small>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-bordered text-center budget-table">
+            <thead class="thead-dark">
+            <tr>
+                <th>天</th>
+                <th>小时</th>
+                <th>分钟</th>
+                <th>秒</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td id="cdD" class="bg-secondary text-white font-weight-bold">—</td>
+                <td id="cdH">—</td>
+                <td id="cdM">—</td>
+                <td id="cdS">—</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 预算配额 -->
+    <div class="budget-section-head">
+        <h5>预算配额</h5>
+        <small class="subtle" id="quotaNote">—</small>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-bordered text-center budget-table">
+            <thead class="thead-dark">
+            <tr>
+                <th>每天可花</th>
+                <th>每周</th>
+                <th>每月</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td id="qDay" class="bg-secondary text-white font-weight-bold">—</td>
+                <td id="qWeek">—</td>
+                <td id="qMonth">—</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="bottom-navigation">
+    <a href="index.html">💰 FIRE计算器</a>
+    <a href="life.html">⏰ 生命倒计时</a>
+    <!--<a href="budget.html">💸 每日预算</a>-->
+    <a href="expense.html">🧾 消费盘点</a>
+    <!--<a href="clock.html">⏰ FIRE时钟</a>-->
+    <a href="rental.html">🏠 房产租售比</a>
+</div>
+<script src="dist/js/jquery-3.7.0.min.js"></script>
+<script src="dist/js/j071026113123.js"></script>
+</body>
+</html>

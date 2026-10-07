@@ -1,0 +1,90 @@
+/* 每日预算配额（budget.html） */
+
+.budget-card {
+    background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+    border: 1px solid #e9ecef;
+    border-radius: .75rem;
+}
+
+.budget-clock {
+    display: inline-block;
+    font-family: 'Arial', sans-serif;
+    font-size: 24px;
+    color: #333;
+    background-color: #f0f0f0;
+    border-radius: 10px;
+    padding: 10px 20px;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.3);
+    font-variant-numeric: tabular-nums;
+}
+
+.budget-hint {
+    font-size: 80%;
+}
+
+.budget-progress {
+    height: .6rem;
+    background: #e9ecef;
+}
+
+.budget-progress .progress-bar {
+    transition: width .6s ease;
+}
+
+.subtle {
+    color: #6c757d;
+}
+
+.budget-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    margin-bottom: .5rem;
+}
+
+.budget-section-head h5 {
+    font-weight: bold;
+    margin: 0 .75rem 0 0;
+}
+
+.budget-table {
+    background-color: #fff;
+}
+
+.budget-table thead th {
+    font-weight: normal;
+}
+
+.budget-table td {
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+@media (min-width: 992px) {
+    .budget-table {
+        table-layout: fixed;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .budget-table td {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .budget-clock {
+        font-size: 16px;
+        padding: 8px 12px;
+    }
+
+    .budget-table th, .budget-table td {
+        padding: .5rem .25rem;
+    }
+
+    .budget-table td {
+        font-size: .85rem;
+    }
+}
